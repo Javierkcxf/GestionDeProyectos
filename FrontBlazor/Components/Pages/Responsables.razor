@@ -1,0 +1,533 @@
+@page "/responsables"
+
+@using System.Net.Http.Json
+@using FrontendBlazorApi.Models
+@using System.Text.Json
+@inject IHttpClientFactory fabricaHttp
+@rendermode InteractiveServer
+
+<PageTitle>Responsables</PageTitle>
+
+    <h3>Gestión de Responsables</h3>
+
+    <div class="mb-3 d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary" @onclick="ProbarConexion">Probar conexión</button>
+        <button type="button" class="btn btn-outline-primary" @onclick="CargarResponsables">Mostrar todos</button>
+        <button type="button" class="btn btn-outline-dark" @onclick="LimpiarFormulario">Limpiar</button>
+    </div>
+    <div class="mb-3">
+        <label for="idBusqueda">Buscar por ID:</label>
+        <InputNumber id="idBusqueda" @bind-Value="idBusqueda" class="form-control" />
+        <button class="btn btn-primary mt-2" @onclick="BuscarResponsable">Buscar</button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(mensaje))
+    {
+        <div class="@claseAviso" role="alert">@mensaje</div>
+    }
+
+    <h4>Formulario de Responsable</h4>
+
+    <EditForm Model="ResponsableActual" OnValidSubmit="GuardarSegunResponsable" FormName="ResponsableForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="row g-3">
+            <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-person text-primary"></i> Tipos de Responsables
+                            </label>
+                            <InputSelect class="form-select" @bind-Value="ResponsableActual.IdTipoResponsable">
+                                <option value="0">-- Seleccione --</option>
+                                @foreach (var c in listaTipoResponsables)
+                                {
+                                    <option value="@c.Id">@c.Titulo (ID: @c.Id)</option>
+                                }
+                            </InputSelect>
+                        </div>
+            <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-person text-primary"></i> Usuarios
+                            </label>
+                            <InputSelect class="form-select" @bind-Value="ResponsableActual.IdUsuario">
+                                <option value="0">-- Seleccione --</option>
+                                @foreach (var c in listaUsuarios)
+                                {
+                                    <option value="@c.Id">@c.Email (ID: @c.Id)</option>
+                                }
+                            </InputSelect>
+                        </div>
+            <div class="col-md-6">
+                <label class="form-label">Nombre</label>
+                <InputText class="form-control" @bind-Value="ResponsableActual.Nombre" />
+            </div>
+        </div>
+
+        <div class="mt-3 d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary">@textoBotonGuardar</button>
+            <button type="button" class="btn btn-danger" @onclick="EliminarResponsable" disabled="@(!existeResponsable)">Eliminar</button>
+        </div>
+    </EditForm>
+
+    <hr />
+
+    @if (cargando)
+    {
+        <div class="table-loading">
+            Cargando Responsables...
+        </div>
+    }
+    else if (listaResponsables.Count == 0)
+    {
+        <div class="alert alert-info">
+            <strong>ℹ️</strong> No hay Responsables disponibles.
+        </div>
+    }
+    else
+    {
+        <div class="table-container">
+            <table class="table table-striped text-white">
+                <thead>
+                    <tr>
+                        <th>Tipos de Responsable</th>
+                        <th>Usuarios</th>
+                        <th>Nombre</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in listaResponsables)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@f.Nombre</td>
+                                    <td>@listaUsuarios.FirstOrDefault(u => u.Id == f.IdUsuario)?.Email</td>
+                                    <td>@listaTipoResponsables.FirstOrDefault(u => u.Id == f.IdTipoResponsable)?.Titulo</td>
+                                    <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                    @onclick="@(() => CargarEnFormulario(f))">
+                                        Cargar
+                                    </button>
+                                    </td>
+                                </tr>
+                            }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @code {
+        private List<Responsable> listaResponsables = new();
+        private List<TipoResponsable> listaTipoResponsables = new();
+        private List<Usuario> listaUsuarios = new();
+        [SupplyParameterFromForm]
+        private Responsable ResponsableActual { get; set; } = new();
+
+        private bool existeResponsable = false;
+        private string textoBotonGuardar = "Crear";
+
+        private string mensaje = "";
+        private string claseAviso = "alert alert-info";
+        private bool cargando = false;
+
+        private const string urlBaseApi = "api/responsable";
+        private const string urlProcedimientos = "api/procedimientos/ejecutarsp";
+        private const string urlConsultas = "api/consultas/ejecutarconsultaparametrizada";
+        private const string urlTipoResponsable = "api/tiporesponsable";
+        private const string urlUsuario = "api/usuario";
+
+        protected override async Task OnInitializedAsync()
+        {
+            await CargarResponsables();
+            await CargarUsuarios();
+            await CargarTipoResponsables();
+        }
+        private async Task CargarUsuarios()
+        {
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlUsuario);
+            
+            listaUsuarios = respuesta?.Datos?.Select(d => new Usuario
+            {
+                Id = ObtenerInt(d, "Id"),
+                Email = ObtenerString(d, "Email"),
+                Contrasena = ObtenerString(d, "Contrasena"),
+                RutaAvatar = ObtenerString(d, "RutaAvatar")
+            }).ToList() ?? new();
+        }
+        catch { }
+    }
+        private async Task CargarTipoResponsables()
+        {
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlTipoResponsable);
+            
+            listaTipoResponsables = respuesta?.Datos?.Select(d => new TipoResponsable
+            {
+                Id = ObtenerInt(d, "Id"),
+                Titulo = ObtenerString(d, "Titulo"),
+                Descripcion = ObtenerString(d, "Descripcion") 
+            }).ToList() ?? new();
+        }
+        catch { }
+    }
+        private async Task CargarResponsables()
+        {
+            try
+            {
+                cargando = true;
+                var cliente = fabricaHttp.CreateClient("Api");
+                var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Responsable>>>(urlBaseApi);
+                listaResponsables = respuesta?.Datos ?? new List<Responsable>();
+                mensaje = $"Se cargaron {listaResponsables.Count} Responsable(s).";
+                claseAviso = "alert alert-success";
+            }
+            catch (HttpRequestException httpError)
+            {
+                if (httpError.Message.Contains("404"))
+                {
+                    mensaje = "Error 404: La API no está ejecutándose o el endpoint no existe. Verifica que la API esté corriendo en http://localhost:5031/";
+                }
+                else if (httpError.Message.Contains("Connection refused") || httpError.Message.Contains("No connection"))
+                {
+                    mensaje = "Error de conexión: No se puede conectar a la API. Verifica que esté ejecutándose en http://localhost:5031/";
+                }
+                else
+                {
+                    mensaje = $"Error HTTP al listar Responsables: {httpError.Message}";
+                }
+                claseAviso = "alert alert-danger";
+            }
+            catch (Exception error)
+            {
+                mensaje = $"Error al listar Responsables: {error.Message}";
+                claseAviso = "alert alert-danger";
+            }
+            finally
+            {
+                cargando = false;
+            }
+        }
+        private int idBusqueda;
+
+        private async Task BuscarResponsable()
+        {
+            try
+            {
+                var consulta = new
+                {
+                    consulta = "SELECT * FROM Responsable WHERE Id = @Id",
+                    parametros = new { Id = idBusqueda }
+                };
+
+                var cliente = fabricaHttp.CreateClient("Api");
+                var respuestaHttp = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
+
+                if (respuestaHttp.IsSuccessStatusCode)
+                {
+                    var resultado = await respuestaHttp.Content.ReadFromJsonAsync<JsonElement>();
+                    Console.WriteLine(resultado.ToString());
+
+                    if (resultado.TryGetProperty("resultados", out var datos) && datos.GetArrayLength() > 0)
+                    {
+                        var primerResponsable = datos[0];
+                        ResponsableActual = new Responsable
+                        {
+                            Id = primerResponsable.GetProperty("Id").GetInt32(),
+                            IdTipoResponsable = primerResponsable.GetProperty("IdTipoResponsable").GetInt32(),
+                            IdUsuario = primerResponsable.GetProperty("IdUsuario").GetInt32(),
+                            Nombre = primerResponsable.GetProperty("Nombre").GetString() ?? string.Empty,
+                            
+                        };
+
+                        existeResponsable = true;
+                        textoBotonGuardar = "Actualizar";
+                        mensaje = string.Empty;
+                        claseAviso = "alert alert-success";
+                    }
+                    else
+                    {
+                        mensaje = "Responsable no encontrado.";
+                        claseAviso = "alert alert-warning";
+                    }
+                }
+                else
+                {
+                    var detalle = await respuestaHttp.Content.ReadAsStringAsync();
+                    mensaje = $"Error: {respuestaHttp.ReasonPhrase} - {detalle}";
+                    claseAviso = "alert alert-danger";
+                }
+            }
+            catch (Exception ex)
+            {
+                mensaje = $"Error al buscar Responsable: {ex.Message}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+
+        private async Task GuardarSegunResponsable()
+        {
+            if (existeResponsable)
+                await ActualizarResponsable();
+            else
+                await CrearResponsable();
+        }
+
+        private async Task CrearResponsable()
+        {
+            LimpiarMensajes();
+
+            try
+            {
+                ResponsableActual.Id = 0;
+
+                var cliente = fabricaHttp.CreateClient("Api");
+                var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, ResponsableActual);
+
+                if (respuesta.IsSuccessStatusCode)
+                {
+                    mensaje = "Responsable creado correctamente.";
+                    claseAviso = "alert alert-success";
+                    await CargarResponsables();
+                    LimpiarFormulario();
+                }
+                else
+                {
+                    var detalle = await respuesta.Content.ReadAsStringAsync();
+                    mensaje = $"No se pudo crear el Responsable. Detalle: {detalle}";
+                    claseAviso = "alert alert-danger";
+                }
+            }
+            catch (Exception error)
+            {
+                mensaje = $"Error al crear Responsable: {error.Message}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+
+        private async Task ActualizarResponsable()
+        {
+            LimpiarMensajes();
+
+            if (ResponsableActual.Id <= 0)
+            {
+                mensaje = "Debe indicar un Responsable válido para actualizar.";
+                claseAviso = "alert alert-warning";
+                return;
+            }
+
+            try
+            {
+                var cliente = fabricaHttp.CreateClient("Api");
+
+                string nombreClave = "Id";
+                string valorClave = ResponsableActual.Id.ToString();
+
+                var ResponsableParaActualizar = new
+                {
+                    IdTipoResponsable = ResponsableActual.IdTipoResponsable,
+                    IdUsuario = ResponsableActual.IdUsuario,
+                    Nombre = ResponsableActual.Nombre,
+                    
+                };
+
+                var ruta = $"{urlBaseApi}/{nombreClave}/{valorClave}";
+                var respuesta = await cliente.PutAsJsonAsync(ruta, ResponsableParaActualizar);
+
+                if (respuesta.IsSuccessStatusCode)
+                {
+                    mensaje = "Responsable actualizado correctamente.";
+                    claseAviso = "alert alert-success";
+                    await CargarResponsables();
+                    existeResponsable = true;
+                    textoBotonGuardar = "Actualizar";
+                }
+                else
+                {
+                    var detalle = await respuesta.Content.ReadAsStringAsync();
+                    mensaje = $"No se pudo actualizar el Responsable. Detalle: {detalle}";
+                    claseAviso = "alert alert-danger";
+                }
+            }
+            catch (Exception error)
+            {
+                mensaje = $"Error al actualizar Responsable: {error.Message}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+
+        private async Task EliminarResponsable()
+        {
+            LimpiarMensajes();
+
+            if (ResponsableActual.Id <= 0)
+            {
+                mensaje = "Debe indicar un Responsable válido para eliminar.";
+                claseAviso = "alert alert-warning";
+                return;
+            }
+
+            try
+            {
+                var cliente = fabricaHttp.CreateClient("Api");
+
+                string tabla = "Responsable";
+                string nombreClave = "Id";
+                string valorClave = ResponsableActual.Id.ToString();
+                string esquema = "dbo";
+
+                var ruta = $"{urlBaseApi}/{nombreClave}/{valorClave}?tabla={tabla}&esquema={esquema}";
+
+                var respuesta = await cliente.DeleteAsync(ruta);
+
+                if (respuesta.IsSuccessStatusCode)
+                {
+                    mensaje = "Responsable eliminado correctamente.";
+                    claseAviso = "alert alert-success";
+                    await CargarResponsables();
+                    LimpiarFormulario();
+                }
+                else if (respuesta.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    var detalle = await respuesta.Content.ReadAsStringAsync();
+                    mensaje = $"No se puede eliminar el Responsable. Detalle: {detalle}";
+                    claseAviso = "alert alert-warning";
+                }
+                else
+                {
+                    var detalle = await respuesta.Content.ReadAsStringAsync();
+                    mensaje = $"No se pudo eliminar el Responsable. Detalle: {detalle}";
+                    claseAviso = "alert alert-danger";
+                }
+            }
+            catch (Exception error)
+            {
+                mensaje = $"Error al eliminar Responsable: {error.Message}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+
+        private async Task ProbarConexion()
+        {
+            LimpiarMensajes();
+            try
+            {
+                var cliente = fabricaHttp.CreateClient("Api");
+                
+                // Mostrar mensaje de prueba
+                mensaje = "Probando conectividad...";
+                claseAviso = "alert alert-info";
+                StateHasChanged();
+                
+                var respuesta = await cliente.GetAsync(urlBaseApi);
+
+                if (respuesta.IsSuccessStatusCode)
+                {
+                    mensaje = "✅ Conexión exitosa con la API. El endpoint está disponible.";
+                    claseAviso = "alert alert-success";
+                }
+                else if (respuesta.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    mensaje = "❌ Error 404: El endpoint no existe. Verifica que la API tenga el endpoint 'api/Responsable' configurado.";
+                    claseAviso = "alert alert-danger";
+                }
+                else
+                {
+                    mensaje = $"❌ La API respondió con Responsable {(int)respuesta.StatusCode} - {respuesta.ReasonPhrase}";
+                    claseAviso = "alert alert-warning";
+                }
+            }
+            catch (HttpRequestException httpError)
+            {
+                if (httpError.Message.Contains("Connection refused") || httpError.Message.Contains("No connection"))
+                {
+                    mensaje = "❌ Error de conexión: No se puede conectar a la API. Verifica que esté ejecutándose en http://localhost:5031/";
+                }
+                else
+                {
+                    mensaje = $"❌ Error HTTP: {httpError.Message}";
+                }
+                claseAviso = "alert alert-danger";
+            }
+            catch (Exception error)
+            {
+                mensaje = $"❌ Error de conexión a la API: {error.Message}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+
+        private void CargarEnFormulario(Responsable e)
+        {
+            ResponsableActual = new Responsable
+            {
+                Id = e.Id,
+                IdTipoResponsable = e.IdTipoResponsable,
+                IdUsuario = e.IdUsuario,
+                Nombre = e.Nombre
+                
+            };
+
+            existeResponsable = true;
+            textoBotonGuardar = "Actualizar";
+            mensaje = "Responsable cargado en el formulario.";
+            claseAviso = "alert alert-info";
+        }
+
+        private void LimpiarMensajes()
+        {
+            mensaje = "";
+            claseAviso = "alert alert-info";
+        }
+
+        private void LimpiarFormulario()
+        {
+            ResponsableActual = new Responsable();
+            existeResponsable = false;
+            textoBotonGuardar = "Crear";
+            LimpiarMensajes();
+        }
+        
+        private int ObtenerInt(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return 0;
+        
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.Number ? elem.GetInt32() : 0;
+        
+        return Convert.ToInt32(valor);
+    }
+
+
+    private decimal ObtenerDecimal(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return 0;
+        
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.Number ? elem.GetDecimal() : 0;
+        
+        return Convert.ToDecimal(valor);
+    }
+
+    private DateTime ObtenerDateTime(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return DateTime.Now;
+        
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.String ? elem.GetDateTime() : DateTime.Now;
+        
+        return Convert.ToDateTime(valor);
+    }
+
+    private string ObtenerString(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return "";
+        
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.String ? elem.GetString() ?? "" : elem.ToString();
+        
+        return valor?.ToString() ?? "";
+    }
+    }

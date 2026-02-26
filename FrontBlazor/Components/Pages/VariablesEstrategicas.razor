@@ -1,0 +1,389 @@
+@page "/variables-estrategicas"
+
+@using System.Net.Http.Json
+@using FrontendBlazorApi.Models
+@using System.Text.Json
+@inject IHttpClientFactory fabricaHttp
+
+<PageTitle>Variables Estratégicas</PageTitle>
+
+<h3>Gestión de Variables Estratégicas</h3>
+
+<div class="mb-3 d-flex gap-2">
+    <button type="button" class="btn btn-outline-secondary" @onclick="ProbarConexion">Probar conexión</button>
+    <button type="button" class="btn btn-outline-primary" @onclick="CargarVariables">Mostrar todos</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="LimpiarFormulario">Limpiar</button>
+</div>
+<div class="mb-3 d-flex gap-2">
+    <InputNumber @bind-Value="idBusqueda" class="form-control" placeholder="Buscar por ID..." style="width: 200px;" />
+    <button type="button" class="btn btn-outline-success" @onclick="BuscarPorId">Buscar</button>
+</div>
+
+
+@if (!string.IsNullOrWhiteSpace(mensaje))
+{
+    <div class="@claseAviso" role="alert">@mensaje</div>
+}
+
+<h4>Formulario de Variable Estratégica</h4>
+
+<EditForm Model="variableActual" OnValidSubmit="GuardarSegunEstado" FormName="VariableForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Título</label>
+            <InputText class="form-control" @bind-Value="variableActual.Titulo" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Descripción</label>
+            <InputText class="form-control" @bind-Value="variableActual.Descripcion" />
+        </div>
+    </div>
+
+    <div class="mt-3 d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary">@textoBotonGuardar</button>
+        <button type="button" class="btn btn-danger" @onclick="EliminarVariable" disabled="@(!existeVariable)">Eliminar</button>
+    </div>
+</EditForm>
+
+<hr />
+
+@if (cargando)
+{
+    <p><em>Cargando variables estratégicas...</em></p>
+}
+else if (listaVariables.Count == 0)
+{
+    <p>No hay variables estratégicas disponibles.</p>
+}
+else
+{
+    <div class="table-container">
+        <table class="table table-striped text-white">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var v in listaVariables)
+                {
+                    <tr>
+                        <td>@v.Titulo</td>
+                        <td>@v.Descripcion</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    @onclick="@(() => CargarEnFormulario(v))">
+                                Cargar
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<VariableEstrategica> listaVariables = new();
+
+    private VariableEstrategica variableActual { get; set; } = new();
+
+    private bool existeVariable = false;
+    private string textoBotonGuardar = "Crear";
+
+    private string mensaje = "";
+    private string claseAviso = "alert alert-info";
+    private bool cargando = false;
+
+    private const string urlBaseApi = "api/variableestrategica";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarVariables();
+    }
+
+    private async Task CargarVariables()
+    {
+        try
+        {
+            cargando = true;
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<VariableEstrategica>>>(urlBaseApi);
+            listaVariables = respuesta?.Datos ?? new List<VariableEstrategica>();
+            mensaje = $"Se cargaron {listaVariables.Count} variable(s) estratégica(s).";
+            claseAviso = "alert alert-success";
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al listar variables estratégicas: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+    private int? idBusqueda;
+    private async Task BuscarPorId()
+{
+    LimpiarMensajes();
+
+    if (idBusqueda == null || idBusqueda <= 0)
+    {
+        mensaje = "Debe ingresar un Id válido.";
+        claseAviso = "alert alert-warning";
+        return;
+    }
+
+    try
+    {
+        var cliente = fabricaHttp.CreateClient("Api");
+
+        var consulta = new
+        {
+            consulta = "SELECT * FROM VariableEstrategica WHERE Id = @Id",
+            parametros = new { Id = idBusqueda }
+        };
+
+        var respuestaHttp = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
+
+        if (respuestaHttp.IsSuccessStatusCode)
+        {
+            var resultado = await respuestaHttp.Content.ReadFromJsonAsync<JsonElement>();
+
+            if (resultado.TryGetProperty("resultados", out var datos) && datos.GetArrayLength() > 0)
+            {
+                var primero = datos[0];
+                variableActual = new VariableEstrategica
+                {
+                    Id = primero.GetProperty("Id").GetInt32(),
+                    Titulo = primero.GetProperty("Titulo").GetString() ?? "",
+                    Descripcion = primero.GetProperty("Descripcion").GetString()
+                };
+
+                existeVariable = true;
+                textoBotonGuardar = "Actualizar";
+                mensaje = "Variable estratégica encontrada.";
+                claseAviso = "alert alert-success";
+            }
+            else
+            {
+                mensaje = "No se encontró ninguna variable con ese Id.";
+                claseAviso = "alert alert-warning";
+            }
+        }
+        else
+        {
+            var detalle = await respuestaHttp.Content.ReadAsStringAsync();
+            mensaje = $"Error al buscar la variable. Detalle: {detalle}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+    catch (Exception error)
+    {
+        mensaje = $"Error al buscar la variable: {error.Message}";
+        claseAviso = "alert alert-danger";
+    }
+}
+
+    private async Task GuardarSegunEstado()
+    {
+        if (existeVariable)
+            await ActualizarVariable();
+        else
+            await CrearVariable();
+    }
+
+    private async Task CrearVariable()
+    {
+        LimpiarMensajes();
+
+        try
+        {
+            variableActual.Id = 0;
+
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, variableActual);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensaje = "Variable estratégica creada correctamente.";
+                claseAviso = "alert alert-success";
+                await CargarVariables();
+                LimpiarFormulario();
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                mensaje = $"No se pudo crear la variable. Detalle: {detalle}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al crear la variable: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task ActualizarVariable()
+    {
+        LimpiarMensajes();
+
+        if (variableActual.Id <= 0)
+        {
+            mensaje = "Debe indicar una variable válida para actualizar.";
+            claseAviso = "alert alert-warning";
+            return;
+        }
+
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+
+            string nombreClave = "Id";
+            string valorClave = variableActual.Id.ToString();
+
+            var variableParaActualizar = new
+            {
+                Titulo = variableActual.Titulo,
+                Descripcion = variableActual.Descripcion
+            };
+
+            var ruta = $"{urlBaseApi}/{nombreClave}/{valorClave}";
+            var respuesta = await cliente.PutAsJsonAsync(ruta, variableParaActualizar);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensaje = "Variable estratégica actualizada correctamente.";
+                claseAviso = "alert alert-success";
+                await CargarVariables();
+                existeVariable = true;
+                textoBotonGuardar = "Actualizar";
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                mensaje = $"No se pudo actualizar la variable. Detalle: {detalle}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al actualizar la variable: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task EliminarVariable()
+    {
+        LimpiarMensajes();
+
+        if (variableActual.Id <= 0)
+        {
+            mensaje = "Debe indicar una variable válida para eliminar.";
+            claseAviso = "alert alert-warning";
+            return;
+        }
+
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+
+            string tabla = "variable_estrategica";
+            string nombreClave = "Id";
+            string valorClave = variableActual.Id.ToString();
+            string esquema = "dbo";
+
+            var ruta = $"{urlBaseApi}/{nombreClave}/{valorClave}?tabla={tabla}&esquema={esquema}";
+
+            var respuesta = await cliente.DeleteAsync(ruta);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensaje = "Variable estratégica eliminada correctamente.";
+                claseAviso = "alert alert-success";
+                await CargarVariables();
+                LimpiarFormulario();
+            }
+            else if (respuesta.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                mensaje = $"No se puede eliminar la variable. Detalle: {detalle}";
+                claseAviso = "alert alert-warning";
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                mensaje = $"No se pudo eliminar la variable. Detalle: {detalle}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al eliminar la variable: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task ProbarConexion()
+    {
+        LimpiarMensajes();
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetAsync(urlBaseApi);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensaje = "Conexión con la API verificada.";
+                claseAviso = "alert alert-success";
+            }
+            else
+            {
+                mensaje = $"La API respondió con estado {(int)respuesta.StatusCode}.";
+                claseAviso = "alert alert-warning";
+            }
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error de conexión a la API: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private void CargarEnFormulario(VariableEstrategica v)
+    {
+        variableActual = new VariableEstrategica
+        {
+            Id = v.Id,
+            Titulo = v.Titulo,
+            Descripcion = v.Descripcion
+        };
+
+        existeVariable = true;
+        textoBotonGuardar = "Actualizar";
+        mensaje = "Variable estratégica cargada en el formulario.";
+        claseAviso = "alert alert-info";
+    }
+
+    private void LimpiarMensajes()
+    {
+        mensaje = "";
+        claseAviso = "alert alert-info";
+    }
+
+    private void LimpiarFormulario()
+    {
+        variableActual = new VariableEstrategica();
+        existeVariable = false;
+        textoBotonGuardar = "Crear";
+        LimpiarMensajes();
+    }
+}

@@ -1,0 +1,639 @@
+html, body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+a, .btn-link {
+    color: #006bb7;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+h1:focus {
+    outline: none;
+}
+
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid #26b050;
+}
+
+.invalid {
+    outline: 1px solid #e50000;
+}
+
+.validation-message {
+    color: #e50000;
+}
+
+.blazor-error-boundary {
+    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+}
+
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
+
+.darker-border-checkbox.form-check-input {
+    border-color: #929292;
+}
+
+.home-container {
+    background-image: url(/img/fondo2.png);
+    background-color: #000000;
+    color: #ffffff;
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* --- Base styles for transparent buttons --- */
+.custom-transparent-button {
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+}
+
+.custom-transparent-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Asegurarse de que el texto del título y párrafo sea blanco en el home --- */
+.home-container {
+    background-image: url(/img/fondo2.png);
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.page{
+    /* Página sin imagen de fondo: fondo sólido para todas las páginas excepto Home */
+    background-image: none;
+    background-color: #000000;
+    background-size: auto;
+}
+
+/* Si tienes un Sidebar, asegúrate de que sus enlaces y texto se vean bien en el fondo negro */
+.sidebar {
+    background-color: #1a1a1a;
+    color: #ffffff;
+}
+
+/* Ensure sidebar/nav is above page background images */
+.sidebar {
+    position: relative;
+    z-index: 2000;
+}
+
+.sidebar .nav-link {
+    color: #cccccc !important;
+}
+
+.sidebar .nav-link:hover {
+    background-color: #333333 !important;
+    color: #ffffff !important;
+}
+
+/* Estilos generales para los títulos y párrafos en el resto de la aplicación */
+h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+}
+
+p {
+    color: #e0e0e0;
+}
+
+body {
+    background-color: #000000 !important;
+    color: #ffffff;
+}
+
+/* Identifica el contenedor principal de tus páginas */
+.page {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+.content {
+    background-image: none;
+    background-color: #000000;
+    color: #ffffff;
+    padding-top: 1.1rem;
+}
+
+main {
+    background-image: none;
+    background-color: #000000;
+    color: #ffffff;
+}
+
+/* Otros elementos que pueden necesitar ajuste de color de texto sobre fondo oscuro */
+h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+}
+
+p, label, li {
+    color: #e0e0e0;
+}
+
+/* Estilos para el sidebar */
+.sidebar {
+    background-color: #1a1a1a;
+    color: #ffffff;
+}
+
+.sidebar .nav-link {
+    color: #cccccc !important;
+}
+
+.sidebar .nav-link:hover {
+    background-color: #333333 !important;
+    color: #ffffff !important;
+}
+
+/* El `home-container` seguirá teniendo sus estilos específicos para el home */
+.home-container {
+    background-image: url(/img/fondo2.png);
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.home-container h1 {
+    color: #ffffff;
+    margin-bottom: 20px;
+}
+
+.home-container .lead {
+    color: #cccccc;
+    margin-bottom: 30px;
+}
+
+/* Y tus botones personalizados */
+.custom-transparent-button {
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+}
+
+.custom-transparent-button:hover {
+    background-color: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.6);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== ESTILOS UNIFICADOS PARA TABLAS EN TONOS GRISES ===== */
+
+/* Tabla base - Estilo gris uniforme */
+.table {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Encabezados de tabla - Gris oscuro */
+.table thead th {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3) !important;
+    font-weight: 600;
+    padding: 12px 8px;
+    border: none;
+}
+
+/* Celdas de tabla */
+.table td {
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    padding: 10px 8px;
+    background-color: transparent !important;
+}
+
+/* Filas de tabla - Efecto hover suave */
+.table tbody tr {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Tablas striped - Variación sutil de grises */
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.table-striped tbody tr:nth-of-type(even) {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.table-striped tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Sobrescribir cualquier clase de color de Bootstrap para tablas */
+.table-primary,
+.table-secondary,
+.table-success,
+.table-danger,
+.table-warning,
+.table-info,
+.table-light,
+.table-dark {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+.table-primary th,
+.table-primary td,
+.table-secondary th,
+.table-secondary td,
+.table-success th,
+.table-success td,
+.table-danger th,
+.table-danger td,
+.table-warning th,
+.table-warning td,
+.table-info th,
+.table-info td,
+.table-light th,
+.table-light td,
+.table-dark th,
+.table-dark td {
+    background-color: transparent !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Forzar texto blanco en todos los elementos de tabla */
+.table *,
+.table th *,
+.table td *,
+.table span,
+.table div,
+.table p,
+.table a:not(.btn),
+.table i,
+.table .badge {
+    color: #ffffff !important;
+}
+
+/* Botones dentro de tablas - Estilo gris */
+.table .btn {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.table .btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+
+/* Badges dentro de tablas - Tonos grises */
+.table .badge {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    font-weight: 500;
+}
+
+/* ===== CONTENEDOR DE TABLAS MEJORADO ===== */
+
+.table-container {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow-x: auto;
+}
+
+.table-container .table {
+    margin-bottom: 0;
+    background: transparent;
+    min-width: 600px;
+}
+
+/* ===== ESTILOS PARA FORMULARIOS ===== */
+
+.form-control {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+}
+
+.form-control:focus {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25) !important;
+}
+
+.form-label {
+    color: #ffffff !important;
+}
+
+/* ===== ESTILOS PARA CARDS ===== */
+
+.card {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+}
+
+.card-header {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+.card-body {
+    background: transparent !important;
+    color: #ffffff !important;
+}
+
+/* Forzar contenido blanco en cards */
+.card-body * {
+    color: #ffffff !important;
+}
+
+/* ===== ESTILOS PARA ALERTAS ===== */
+
+.alert {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+}
+
+.alert-success {
+    background-color: rgba(40, 167, 69, 0.15) !important;
+    border-color: rgba(40, 167, 69, 0.3) !important;
+}
+
+.alert-danger {
+    background-color: rgba(220, 53, 69, 0.15) !important;
+    border-color: rgba(220, 53, 69, 0.3) !important;
+}
+
+.alert-warning {
+    background-color: rgba(255, 193, 7, 0.15) !important;
+    border-color: rgba(255, 193, 7, 0.3) !important;
+}
+
+.alert-info {
+    background-color: rgba(23, 162, 184, 0.15) !important;
+    border-color: rgba(23, 162, 184, 0.3) !important;
+}
+
+/* ===== BOTONES ===== */
+
+.btn-outline-secondary,
+.btn-outline-primary,
+.btn-outline-success,
+.btn-outline-dark {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-primary:hover,
+.btn-outline-success:hover,
+.btn-outline-dark:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    color: white !important;
+}
+
+/* Botones principales con tonos grises */
+.btn-primary {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+}
+
+.btn-primary:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    color: #ffffff !important;
+}
+
+/* ===== BADGES ===== */
+
+.badge {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    font-weight: 500;
+}
+
+.badge.bg-success {
+    background-color: rgba(40, 167, 69, 0.7) !important;
+}
+
+.badge.bg-danger {
+    background-color: rgba(220, 53, 69, 0.7) !important;
+}
+
+.badge.bg-warning {
+    background-color: rgba(255, 193, 7, 0.7) !important;
+    color: #000000 !important;
+}
+
+.badge.bg-info {
+    background-color: rgba(23, 162, 184, 0.7) !important;
+}
+
+.badge.bg-secondary {
+    background-color: rgba(108, 117, 125, 0.7) !important;
+}
+
+/* ===== SOBRESCRIBIR CLASES DE COLOR DE BOOTSTRAP ===== */
+
+.text-primary,
+.text-secondary,
+.text-dark,
+.text-body,
+.text-black {
+    color: #ffffff !important;
+}
+
+/* ===== BOTONES GRISES EN HOME ===== */
+
+.home-container .custom-transparent-button {
+    background-color: rgba(90, 90, 90, 0.85) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 10px 20px;
+    transition: all 0.3s ease;
+}
+
+.home-container .custom-transparent-button:hover {
+    background-color: rgba(110, 110, 110, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    transform: translateY(-2px);
+}
+
+/* ===== ESTILOS ESPECÍFICOS PARA CONTAINER-FLUID ===== */
+
+.container-fluid .table,
+.container-fluid .table * {
+    color: #ffffff !important;
+}
+
+.container-fluid .card {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.container-fluid .card-header {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+.container-fluid .card-body {
+    background: transparent !important;
+    color: #ffffff !important;
+}
+
+.container-fluid .card-body * {
+    color: #ffffff !important;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+    .table-container {
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .table-container .table {
+        min-width: 500px;
+        font-size: 0.9rem;
+    }
+    
+    .table thead th {
+        padding: 10px 6px;
+        font-size: 0.85rem;
+    }
+    
+    .table td {
+        padding: 8px 6px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .table-container {
+        padding: 10px;
+        margin: 10px 0;
+    }
+    
+    .table-container .table {
+        min-width: 400px;
+        font-size: 0.8rem;
+    }
+    
+    .table thead th {
+        padding: 8px 4px;
+        font-size: 0.8rem;
+    }
+    
+    .table td {
+        padding: 6px 4px;
+        font-size: 0.8rem;
+    }
+}
+
+/* ===== UTILIDADES ===== */
+
+.text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.spinner-border.text-primary {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+    opacity: 0.8;
+}
+
+.btn-close:hover {
+    opacity: 1;
+}
+
+.validation-message {
+    color: #ff6b6b !important;
+    font-size: 0.875rem !important;
+}
+
+.form-control:disabled,
+.form-control[disabled] {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    opacity: 0.7 !important;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.form-check-input {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.form-check-input:checked {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.form-check-label {
+    color: #ffffff !important;
+}

@@ -1,0 +1,14 @@
+{ "liveServer.settings.NoBrowser": true, // Evita que Live Server abra una nueva ventana
+    "liveServer.settings.port": 0, // No inicia un servidor propio, solo monitorea
+    "liveServer.settings.host": "127.0.0.1", // Puede ser cualquier cosa, ya que no inicia servidor
+    "liveServer.settings.proxy": "https://localhost:5001", // Aquí es donde puedes indicar tu aplicación Blazor
+    "liveServer.settings.proxyReq": [
+        {
+            "match": "^/", // Para todas las rutas
+            "to": "https://localhost:5001" // Redirige a tu app Blazor
+        }
+    ],
+    "liveServer.settings.proxyPreserveHost": true, // Mantiene el host original
+    "liveServer.settings.root": "/wwwroot", // Para que busque los archivos desde la raíz web
+    "liveServer.settings.file": "index.html" // Un archivo para iniciar si lo abriera
+}

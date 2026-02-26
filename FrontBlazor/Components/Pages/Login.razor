@@ -1,0 +1,585 @@
+﻿@page "/login"
+@rendermode InteractiveServer
+@using FrontendBlazorApi.Servicios
+@using FrontendBlazorApi.Models
+@using System.Text.Json
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager navegador
+@inject ServicioAutenticacion servicioAuth
+@inject ServicioApiGenerico servicioApi
+@inject IJSRuntime _js
+
+<PageTitle>Inicio de Sesión</PageTitle>
+
+<style>
+    .login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="white" stroke-width="0.5" opacity="0.05"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .login-card {
+        background: #2b2b2b;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        overflow: hidden;
+        max-width: 1000px;
+        width: 100%;
+        margin: 20px;
+        display: flex;
+        position: relative;
+        z-index: 1;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .login-image-section {
+        flex: 1;
+        background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
+        padding: 60px 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .login-image-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(150, 150, 150, 0.1) 0%, transparent 70%);
+        animation: pulse 15s ease-in-out infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+    }
+
+    .login-image-icon {
+        font-size: 120px;
+        margin-bottom: 30px;
+        animation: float 3s ease-in-out infinite;
+        position: relative;
+        z-index: 1;
+        color: #e0e0e0;
+    }
+
+    @@keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    .login-image-text h2 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        position: relative;
+        z-index: 1;
+        color: #e0e0e0;
+    }
+
+    .login-form-section {
+        flex: 1;
+        padding: 60px 50px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: #333333;
+    }
+
+    .login-form-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #e0e0e0;
+        margin-bottom: 10px;
+    }
+
+    .login-form-subtitle {
+        color: #a0a0a0;
+        margin-bottom: 40px;
+    }
+
+    .form-floating-custom {
+        position: relative;
+        margin-bottom: 25px;
+    }
+
+    .form-floating-custom .form-control {
+        height: 60px;
+        border-radius: 12px;
+        border: 2px solid #4a4a4a;
+        background: #2b2b2b;
+        color: #e0e0e0;
+        padding: 20px 20px 20px 55px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-floating-custom .form-control:focus {
+        border-color: #7a7a7a;
+        box-shadow: 0 0 0 0.2rem rgba(122, 122, 122, 0.25);
+        outline: none;
+        background: #3a3a3a;
+    }
+
+    .form-floating-custom .form-control::placeholder {
+        color: #666;
+    }
+
+    .form-floating-custom .input-icon {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+        font-size: 1.3rem;
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .form-floating-custom .form-control:focus~.input-icon {
+        color: #b0b0b0;
+    }
+
+    .btn-login {
+        height: 60px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        background: linear-gradient(135deg, #5a7fc7 0%, #7a9fd9 100%);
+        border: none;
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(90, 127, 199, 0.4);
+    }
+
+    .btn-login:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(90, 127, 199, 0.6);
+        background: linear-gradient(135deg, #6a8fd7 0%, #8aafe9 100%);
+    }
+
+    .btn-login:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
+    .btn-login:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .login-footer {
+        margin-top: 30px;
+        text-align: center;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    @@media (max-width: 768px) {
+        .login-card {
+            flex-direction: column;
+        }
+
+        .login-image-section {
+            padding: 40px 20px;
+            border-right: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .login-form-section {
+            padding: 40px 30px;
+        }
+
+        .login-image-icon {
+            font-size: 80px;
+        }
+
+        .login-image-text h2 {
+            font-size: 1.8rem;
+        }
+    }
+
+    .alert-modern {
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        animation: slideDown 0.3s ease-out;
+        background: #2b2b2b;
+        color: #e0e0e0;
+    }
+
+    .alert-success {
+        background: #1a3a1a;
+        border-color: #2d5a2d;
+        color: #90ee90;
+    }
+
+    .alert-danger {
+        background: #3a1a1a;
+        border-color: #5a2d2d;
+        color: #ff6b6b;
+    }
+
+    .alert-warning {
+        background: #3a3a1a;
+        border-color: #5a5a2d;
+        color: #ffd700;
+    }
+
+    .alert-info {
+        background: #3a4a5a;
+        border-color: #4a5a6a;
+        color: #b8d4f1;
+    }
+
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .loading-step {
+        font-size: 0.9rem;
+        color: #a0a0a0;
+        margin-top: 10px;
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+</style>
+
+<div class="login-container">
+    <div class="login-card">
+        <!-- Sección de imagen/ilustración izquierda -->
+        <div class="login-image-section">
+            <div class="login-image-icon">
+                <i class="bi bi-shield-lock-fill"></i>
+            </div>
+            <div class="login-image-text text-center">
+                <h2>Sistema de Gestión de Proyectos</h2>
+            </div>
+        </div>
+
+        <!-- Sección de formulario derecha -->
+        <div class="login-form-section">
+            <div class="login-form-title">Iniciar Sesión</div>
+            <div class="login-form-subtitle">Ingrese sus credenciales para continuar</div>
+
+            <!-- Mensajes de alerta -->
+            @if (!string.IsNullOrEmpty(mensaje))
+            {
+                <div class="alert @claseAviso alert-modern" role="alert">
+                    <i class="bi @iconoMensaje me-2"></i>@mensaje
+                    @if (!string.IsNullOrEmpty(pasoActual))
+                    {
+                        <div class="loading-step">
+                            <i class="bi bi-arrow-right me-1"></i>@pasoActual
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Formulario de login -->
+            <form @onsubmit="IniciarSesion" @onsubmit:preventDefault="true">
+                <!-- Campo de usuario/email -->
+                <div class="form-floating-custom">
+                    <input type="email" class="form-control" @bind="_credenciales.Email" @bind:event="oninput"
+                        placeholder="Correo electrónico" autocomplete="username" disabled="@cargando" required />
+                    <i class="bi bi-person-circle input-icon"></i>
+                </div>
+
+                <!-- Campo de contraseña -->
+                <div class="form-floating-custom">
+                    <input type="password" class="form-control" @bind="_credenciales.Password" @bind:event="oninput"
+                        placeholder="Contraseña" autocomplete="current-password" disabled="@cargando" required />
+                    <i class="bi bi-lock-fill input-icon"></i>
+                </div>
+
+                <!-- Botón de envío -->
+                <button type="submit" class="btn btn-login w-100" disabled="@cargando">
+                    @if (cargando)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span>Verificando...</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                        <span>Iniciar Sesión</span>
+                    }
+                </button>
+            </form>
+
+            <!-- Footer del formulario -->
+            <div class="login-footer">
+                <i class="bi bi-shield-check me-1"></i>
+                Conexión segura y encriptada
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Credenciales _credenciales = new();
+    private string mensaje = "";
+    private string pasoActual = "";
+    private string claseAviso = "alert-info";
+    private string iconoMensaje = "bi-info-circle";
+    private bool cargando = false;
+
+    private async Task IniciarSesion()
+{
+    try
+    {
+        Console.WriteLine("🚀 Iniciando proceso de login...");
+        cargando = true;
+        pasoActual = "";
+        StateHasChanged();
+
+        // Validaciones
+        if (string.IsNullOrWhiteSpace(_credenciales.Email))
+        {
+            mensaje = "Por favor ingrese su correo electrónico";
+            claseAviso = "alert-warning";
+            iconoMensaje = "bi-exclamation-circle-fill";
+            cargando = false;
+            Console.WriteLine("❌ Validación fallida: Email vacío");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_credenciales.Password))
+        {
+            mensaje = "Por favor ingrese su contraseña";
+            claseAviso = "alert-warning";
+            iconoMensaje = "bi-exclamation-circle-fill";
+            cargando = false;
+            Console.WriteLine("❌ Validación fallida: Password vacío");
+            return;
+        }
+
+        Console.WriteLine($"📧 Validando credenciales para: {_credenciales.Email}");
+        mensaje = "Verificando credenciales...";
+        claseAviso = "alert-info";
+        iconoMensaje = "bi-info-circle-fill";
+        pasoActual = "Validando usuario y contraseña";
+        StateHasChanged();
+
+        // Obtener token
+        var datosToken = new
+        {
+            tabla = "Usuario",
+            campoUsuario = "email",
+            campoContrasena = "contrasena",
+            usuario = _credenciales.Email.Trim(),
+            contrasena = _credenciales.Password
+        };
+
+        Console.WriteLine("🔐 Solicitando token al servidor...");
+        var resultado = await servicioApi.PostAsync<RespuestaToken>("api/Autenticacion/token", datosToken);
+
+        if (resultado == null || string.IsNullOrEmpty(resultado.Token))
+        {
+            mensaje = "Credenciales incorrectas. Verifique su email y contraseña.";
+            claseAviso = "alert-danger";
+            iconoMensaje = "bi-exclamation-triangle-fill";
+            cargando = false;
+            Console.WriteLine("❌ Token no recibido o vacío");
+            return;
+        }
+
+        Console.WriteLine("✅ Token recibido correctamente");
+        
+        // **CORRECCIÓN CLAVE**: Guardar en ambos lugares
+        pasoActual = "Configurando autenticación";
+        StateHasChanged();
+
+        // 1. Guardar en ServicioAutenticacion
+        Console.WriteLine("💾 Guardando token en ServicioAutenticacion...");
+        await servicioAuth.IniciarSesionAsync(resultado.Token, _credenciales.Email.Trim());
+        
+        // 2. Guardar en sessionStorage para ServicioApiGenerico
+        Console.WriteLine("💾 Guardando token en sessionStorage...");
+        await _js.InvokeVoidAsync("sessionStorage.setItem", "token", resultado.Token);
+        await _js.InvokeVoidAsync("sessionStorage.setItem", "email", _credenciales.Email.Trim());
+        
+        // Esperar para asegurar persistencia
+        await Task.Delay(100);
+        Console.WriteLine("✅ Token guardado en ambos lugares");
+
+        // Cargar permisos usando el endpoint directo
+        mensaje = "Cargando permisos...";
+        pasoActual = "Obteniendo permisos del usuario";
+        StateHasChanged();
+
+        try
+        {
+            Console.WriteLine("👨‍💼 Cargando permisos del usuario...");
+            await CargarPermisosUsuario(_credenciales.Email.Trim());
+            pasoActual = "Permisos cargados correctamente";
+            StateHasChanged();
+            Console.WriteLine("✅ Permisos cargados exitosamente");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠ Error al cargar permisos (continuando): {ex.Message}");
+            pasoActual = "Permisos no cargados, pero sesión iniciada";
+            StateHasChanged();
+        }
+
+        // Éxito - VERIFICAR QUE LLEGA AQUÍ
+        Console.WriteLine("🎉 Login exitoso, preparando redirección...");
+        mensaje = "¡Inicio de sesión exitoso!";
+        claseAviso = "alert-success";
+        iconoMensaje = "bi-check-circle-fill";
+        pasoActual = "Redirigiendo al sistema";
+        StateHasChanged();
+
+        Console.WriteLine("⏳ Esperando 1 segundo antes de redirigir...");
+        await Task.Delay(1000);
+        
+        Console.WriteLine("🔄 Redirigiendo a /inicio...");
+        navegador.NavigateTo("/inicio", forceLoad: true);
+        Console.WriteLine("✅ Comando de redirección ejecutado");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"💥 ERROR en IniciarSesion: {ex.Message}");
+        Console.WriteLine($"📝 StackTrace: {ex.StackTrace}");
+
+        var mensajeError = ex.Message.Contains("400")
+            ? "Solicitud incorrecta. Verifique los datos ingresados."
+            : ex.Message.Contains("401") || ex.Message.Contains("Unauthorized")
+            ? "Credenciales incorrectas. Verifique su email y contraseña."
+            : $"Error al iniciar sesión: {ex.Message}";
+
+        mensaje = mensajeError;
+        claseAviso = "alert-danger";
+        iconoMensaje = "bi-exclamation-triangle-fill";
+        cargando = false;
+        StateHasChanged();
+    }
+}
+
+    private async Task CargarPermisosUsuario(string emailUsuario)
+{
+    try
+    {
+        Console.WriteLine($"🔍 Cargando permisos via API para: {emailUsuario}");
+        
+        // FORMA CORRECTA: Usar servicioApi.GetAsync directamente
+        var rutas = await servicioApi.GetAsync<List<RutaRol>>($"api/Autenticacion/rutasrol/usuario/{emailUsuario}");
+
+        if (rutas != null && rutas.Any())
+        {
+            await servicioAuth.GuardarRutasRolAsync(rutas);
+            Console.WriteLine($"✅ Permisos cargados exitosamente: {rutas.Count} rutas");
+            
+            // Debug: mostrar las rutas cargadas
+            foreach (var ruta in rutas)
+            {
+                Console.WriteLine($"🛣️ Ruta: {ruta.RutaUrl}, Rol: {ruta.NombreRol}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("ℹ No se encontraron rutas para el usuario");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"⚠ Error cargando permisos: {ex.Message}");
+        // Continuar sin permisos - no es crítico para el login
+    }
+}
+    private string ObtenerString(Dictionary<string, object> dict, params string[] keys)
+    {
+        if (dict == null || dict.Count == 0) return "";
+
+        foreach (var key in keys)
+        {
+            if (string.IsNullOrEmpty(key)) continue;
+
+            if (dict.TryGetValue(key, out var valor))
+                return ConvertValueToString(valor);
+
+            var match = dict.Keys.FirstOrDefault(k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
+            if (match != null && dict.TryGetValue(match, out valor))
+                return ConvertValueToString(valor);
+        }
+
+        return "";
+    }
+
+    private string ConvertValueToString(object? valor)
+    {
+        if (valor == null) return "";
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.String ? elem.GetString() ?? "" : elem.ToString();
+        return valor.ToString() ?? "";
+    }
+
+    private class RespuestaToken
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("estado")]
+        public int Estado { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("mensaje")]
+        public string? Mensaje { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("usuario")]
+        public string? Usuario { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("token")]
+        public string? Token { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("expiracion")]
+        public DateTime? Expiracion { get; set; }
+    }
+}

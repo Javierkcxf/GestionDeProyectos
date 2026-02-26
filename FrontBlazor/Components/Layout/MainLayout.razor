@@ -1,0 +1,103 @@
+﻿@inherits LayoutComponentBase
+@using FrontendBlazorApi.Servicios
+@using Microsoft.AspNetCore.Components.Authorization
+@inject ServicioAutenticacion ServicioAuth
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        @* Barra superior con información del usuario *@
+        <div class="top-bar bg-dark text-white px-4 py-2 d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">Sistema de Gestión de Proyectos</h5>
+            </div>
+            <div class="d-flex align-items-center">
+                @if (UsuarioAutenticado)
+                {
+                    <span class="me-3">
+                        <i class="oi oi-person me-1"></i>
+                        @EmailUsuario
+                        @if (RolesUsuario.Any())
+                        {
+                            <span class="badge bg-primary ms-2">@string.Join(", ", RolesUsuario)</span>
+                        }
+                    </span>
+                    <button class="btn btn-outline-light btn-sm" @onclick="CerrarSesion">
+                        <i class="oi oi-account-logout me-1"></i>Cerrar Sesión
+                    </button>
+                }
+            </div>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    private bool UsuarioAutenticado { get; set; } = false;
+    private string EmailUsuario { get; set; } = "";
+    private List<string> RolesUsuario { get; set; } = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CargarInformacionUsuario();
+            StateHasChanged();
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task CargarInformacionUsuario()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            UsuarioAutenticado = authState.User.Identity?.IsAuthenticated == true;
+
+            if (UsuarioAutenticado)
+            {
+                EmailUsuario = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ??
+                              authState.User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "";
+                RolesUsuario = authState.User.FindAll(System.Security.Claims.ClaimTypes.Role)
+                              .Select(c => c.Value)
+                              .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando información del usuario: {ex.Message}");
+            UsuarioAutenticado = false;
+        }
+    }
+
+    private async Task CerrarSesion()
+    {
+        try
+        {
+            await ServicioAuth.CerrarSesionAsync();
+            // Forzar recarga completa para limpiar el estado del cliente
+            Navigation.NavigateTo("/login", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cerrando sesión: {ex.Message}");
+            // En caso de error, intentar navegar de todas formas
+            Navigation.NavigateTo("/login", forceLoad: true);
+        }
+    }
+}

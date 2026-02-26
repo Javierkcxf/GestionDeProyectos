@@ -1,0 +1,134 @@
+/* Scoped CSS for Home.razor */
+
+/* Mostrar imagen en toda la ventana (viewport) */
+.home-background {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 2rem;
+    color: #fff;
+    position: relative;
+    z-index: 1; /* contenido encima de los pseudo-elementos fijos */
+    min-height: 100vh; /* Asegurar que ocupe toda la altura de la ventana */
+    width: 100%;
+}
+
+/* Scoped background for Home only */
+.home-background::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: url('/img/fondo2.png');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    z-index: -1000;
+    pointer-events: none;
+    background-color: #000000;
+}
+
+.home-background::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: -999;
+    pointer-events: none;
+}
+
+.home-background > * {
+    position: relative;
+    z-index: 2;
+}
+
+/* ===== BOTONES GRIS NARDO TRANSLÚCIDO (Home específico) ===== */
+.home-background .custom-transparent-button,
+.home-background .button-group .custom-transparent-button,
+.home-background .mosaic-grid .custom-transparent-button {
+    background-color: rgb(90, 90, 90) !important; /* gris nardo translúcido */
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    width: 180px !important;
+    height: 70px !important;
+    display: flex;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+    font-weight: 600;
+    backdrop-filter: blur(4px); /* efecto cristal esmerilado */
+}
+
+/* Hover */
+.home-background .custom-transparent-button:hover,
+.home-background .button-group .custom-transparent-button:hover,
+.home-background .mosaic-grid .custom-transparent-button:hover {
+    background-color: rgba(110, 110, 110, 0.92) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    color: #fff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* Active */
+.home-background .custom-transparent-button:active,
+.home-background .mosaic-grid .custom-transparent-button:active {
+    background-color: rgba(70, 70, 70, 0.9) !important;
+    transform: translateY(0);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+/* ===== FIN DE BOTONES ===== */
+
+.lead {
+    color: #f8f9fa;
+}
+
+/* Grid del mosaico estilo Windows - posicionado a la izquierda */
+.mosaic-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 2rem;
+    max-width: 600px;
+    margin: 2rem auto 0; 
+    justify-items: center; 
+}
+
+/* Responsive design para el mosaico */
+@media (max-width: 768px) {
+    .mosaic-grid {
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        gap: 0.8rem;
+        max-width: 500px;
+    }
+    
+    .mosaic-grid .custom-transparent-button {
+        padding: 1.2rem 0.8rem;
+        font-size: 0.9rem;
+        min-height: 70px;
+    }
+}
+
+@media (max-width: 480px) {
+    .mosaic-grid {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        gap: 0.6rem;
+        max-width: 300px;
+    }
+    
+    .mosaic-grid .custom-transparent-button {
+        padding: 1rem 0.5rem;
+        font-size: 0.8rem;
+        min-height: 60px;
+    }
+    
+    .home-background {
+        padding: 1.5rem 1rem;
+    }
+}

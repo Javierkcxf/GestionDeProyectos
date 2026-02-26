@@ -1,0 +1,306 @@
+@page "/inicio"
+@inherits PaginaAutenticada
+
+<PageTitle>Inicio</PageTitle>
+
+<div class="home-background">
+    <h1>Bienvenido</h1>
+    <p class="lead">Selecciona una sección para gestionar los datos:</p>
+
+    <div class="mosaic-grid">
+        @* SECCIÓN: CONFIGURACIÓN DEL SISTEMA - Solo Administrador *@
+      
+            <NavLink class="btn custom-transparent-button" href="/usuarios">Usuarios</NavLink>
+            <NavLink class="btn custom-transparent-button" href="/roles">Roles</NavLink>
+            <NavLink class="btn custom-transparent-button" href="/rutas">Rutas</NavLink>
+            <NavLink class="btn custom-transparent-button" href="/permisos">Permisos</NavLink>
+        
+
+        @* SECCIÓN: DATOS MAESTROS - Solo Administrador *@
+ 
+            <NavLink class="btn custom-transparent-button" href="/tipos-responsable">
+                <i class="oi oi-list-rich me-2"></i>Tipos Responsable
+            </NavLink>
+            <NavLink class="btn custom-transparent-button" href="/tipos-proyecto">
+                <i class="oi oi-list-rich me-2"></i>Tipos Proyecto
+            </NavLink>
+            <NavLink class="btn custom-transparent-button" href="/estados">
+                <i class="oi oi-list-rich me-2"></i>Estados
+            </NavLink>
+            <NavLink class="btn custom-transparent-button" href="/tipos-producto">
+                <i class="oi oi-list-rich me-2"></i>Tipos Producto
+            </NavLink>
+        
+
+        @* SECCIÓN: GESTIÓN OPERATIVA *@
+     
+          
+                <NavLink class="btn custom-transparent-button" href="/proyectos">
+                    <i class="oi oi-project me-2"></i>Proyectos
+                </NavLink>
+    
+                <NavLink class="btn custom-transparent-button" href="/productos">
+                    <i class="oi oi-box me-2"></i>Productos
+                </NavLink>
+    
+                <NavLink class="btn custom-transparent-button" href="/entregables">
+                    <i class="oi oi-document me-2"></i>Entregables
+                </NavLink>
+
+                <NavLink class="btn custom-transparent-button" href="/producto_entregables">
+                    <i class="oi oi-link-intact me-2"></i>Producto-Entregables
+                </NavLink>
+ 
+                <NavLink class="btn custom-transparent-button" href="/actividades">
+                    <i class="oi oi-task me-2"></i>Actividades
+                </NavLink>
+     
+                <NavLink class="btn custom-transparent-button" href="/archivos">
+                    <i class="oi oi-folder me-2"></i>Archivos
+                </NavLink>
+      
+                <NavLink class="btn custom-transparent-button" href="/responsables">
+                    <i class="oi oi-people me-2"></i>Responsables
+                </NavLink>
+            
+
+        @* SECCIÓN: GESTIÓN FINANCIERA *@
+       
+            <NavLink class="btn custom-transparent-button" href="/presupuestos">
+                <i class="oi oi-dollar me-2"></i>Presupuestos
+            </NavLink>
+
+        
+                <NavLink class="btn custom-transparent-button" href="/distribuciones_presupuesto">
+                    <i class="oi oi-split me-2"></i>Distribuciones
+                </NavLink>
+      
+                <NavLink class="btn custom-transparent-button" href="/ejecuciones_presupuesto">
+                    <i class="oi oi-play-circle me-2"></i>Ejecuciones
+                </NavLink>
+            
+
+        @* SECCIÓN: ESTRATÉGICO *@
+   
+                <NavLink class="btn custom-transparent-button" href="/variables-estrategicas">
+                    <i class="oi oi-target me-2"></i>Variables Estratégicas
+                </NavLink>
+                <NavLink class="btn custom-transparent-button" href="/objetivos_estrategico">
+                    <i class="oi oi-bullseye me-2"></i>Objetivos Estratégicos
+                </NavLink>
+                <NavLink class="btn custom-transparent-button" href="/metas_estrategicas">
+                    <i class="oi oi-flag me-2"></i>Metas Estratégicas
+                </NavLink>
+
+                <NavLink class="btn custom-transparent-button" href="/metas_proyecto">
+                    <i class="oi oi-flag me-2"></i>Metas de Proyecto
+                </NavLink>
+            
+    </div>
+</div>
+<style>
+    /* ===== ESTILOS PARA LA PÁGINA DE INICIO ===== */
+
+    .home-background {
+        min-height: 100vh;
+        background: linear-gradient(135deg, rgba(45, 45, 45, 0.85) 0%, rgba(26, 26, 26, 0.95) 100%), url('/img/fondo2.png');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        padding: 40px 20px;
+        color: #e0e0e0;
+    }
+
+    .home-background h1 {
+        color: #e0e0e0;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+
+    .home-background .lead {
+        color: #a0a0a0;
+        font-size: 1.2rem;
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .mosaic-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 20px;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .custom-transparent-button {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border: 2px solid rgba(255, 255, 255, 0.2) !important;
+        color: #e0e0e0 !important;
+        padding: 18px 24px !important;
+        border-radius: 12px !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        transition: all 0.3s ease !important;
+        text-decoration: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 65px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+        text-align: center !important;
+    }
+
+    .custom-transparent-button:hover {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-color: rgba(255, 255, 255, 0.4) !important;
+        color: #ffffff !important;
+        transform: translateY(-3px) !important;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    .custom-transparent-button:active {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .custom-transparent-button i {
+        font-size: 1.1rem;
+        margin-right: 8px;
+    }
+
+    /* ===== RESPONSIVE PARA TABLETS ===== */
+    @@media (max-width: 992px) {
+        .mosaic-grid {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .home-background h1 {
+            font-size: 2rem;
+        }
+
+        .custom-transparent-button {
+            padding: 15px 20px !important;
+            font-size: 0.95rem !important;
+            min-height: 60px !important;
+        }
+    }
+
+    /* ===== RESPONSIVE PARA MÓVILES ===== */
+    @@media (max-width: 576px) {
+        .mosaic-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+            padding: 0 10px;
+        }
+
+        .home-background {
+            padding: 30px 15px;
+        }
+
+        .home-background h1 {
+            font-size: 1.8rem;
+        }
+
+        .home-background .lead {
+            font-size: 1rem;
+            margin-bottom: 30px;
+        }
+
+        .custom-transparent-button {
+            padding: 14px 18px !important;
+            font-size: 0.9rem !important;
+            min-height: 55px !important;
+        }
+    }
+</style>
+@code {
+    // Variables para controlar la visibilidad de enlaces
+    private bool EsAdmin { get; set; } = false;
+    private bool PuedeVerProyectos { get; set; } = false;
+    private bool PuedeVerProductos { get; set; } = false;
+    private bool PuedeVerEntregables { get; set; } = false;
+    private bool PuedeVerProductoEntregables { get; set; } = false;
+    private bool PuedeVerActividades { get; set; } = false;
+    private bool PuedeVerArchivos { get; set; } = false;
+    private bool PuedeVerResponsables { get; set; } = false;
+    private bool PuedeVerPresupuestos { get; set; } = false;
+    private bool PuedeVerDistribuciones { get; set; } = false;
+    private bool PuedeVerEjecuciones { get; set; } = false;
+    private bool PuedeVerVariablesEstrategicas { get; set; } = false;
+    private bool PuedeVerObjetivosEstrategicos { get; set; } = false;
+    private bool PuedeVerMetasEstrategicas { get; set; } = false;
+    private bool PuedeVerMetasProyecto { get; set; } = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CargarPermisosEnlaces();
+            StateHasChanged();
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task CargarPermisosEnlaces()
+    {
+        try
+        {
+            EsAdmin = await EsAdministradorAsync();
+            PuedeVerProyectos = await TienePermisoAsync("proyectos");
+            PuedeVerProductos = await TienePermisoAsync("productos");
+            PuedeVerEntregables = await TienePermisoAsync("entregables");
+            PuedeVerProductoEntregables = await TienePermisoAsync("producto_entregables");
+            PuedeVerActividades = await TienePermisoAsync("actividades");
+            PuedeVerArchivos = await TienePermisoAsync("archivos");
+            PuedeVerResponsables = await TienePermisoAsync("responsables");
+            PuedeVerPresupuestos = await TienePermisoAsync("presupuestos");
+            PuedeVerDistribuciones = await TienePermisoAsync("distribucionespresupuesto");
+            PuedeVerEjecuciones = await TienePermisoAsync("ejecucionespresupuesto");
+            PuedeVerMetasProyecto = await TienePermisoAsync("metasproyecto");
+
+            // Los administradores pueden ver todo lo estratégico
+            if (EsAdmin)
+            {
+                PuedeVerVariablesEstrategicas = true;
+                PuedeVerObjetivosEstrategicos = true;
+                PuedeVerMetasEstrategicas = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando permisos de enlaces: {ex.Message}");
+        }
+    }
+
+    // Método auxiliar para verificar permisos de ruta
+    private async Task<bool> TienePermisoAsync(string ruta)
+    {
+        try
+        {
+            return await ServicioAuth.TienePermisoParaRutaAsync(ruta);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    // Método auxiliar para verificar si el usuario es administrador
+    private async Task<bool> EsAdministradorAsync()
+    {
+        try
+        {
+            var roles = await ServicioAuth.ObtenerRolesUsuarioAsync();
+            return roles!.Contains("Administrador");
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}

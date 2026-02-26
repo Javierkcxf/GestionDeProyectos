@@ -1,0 +1,337 @@
+@page "/tipos-proyecto"
+
+@using System.Net.Http.Json
+@using FrontendBlazorApi.Models
+@using System.Text.Json
+@inject IHttpClientFactory fabricaHttp
+@inject HttpClient cliente
+@using FrontendBlazorApi.Servicios
+@using FrontendBlazorApi.Components
+@inherits PaginaAutenticada
+@inject ServicioApiGenerico servicioApi
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>Tipos de Proyecto</PageTitle>
+
+<h3>Gestión de Tipos de Proyecto</h3>
+
+<div class="mb-3 d-flex gap-2">
+    <button type="button" class="btn btn-outline-secondary" @onclick="ProbarConexion">Probar conexión</button>
+    <button type="button" class="btn btn-outline-primary" @onclick="CargarTipos">Mostrar todos</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="LimpiarFormulario">Limpiar</button>
+</div>
+
+<div class="input-group mb-3 w-50">
+    <span class="input-group-text">ID Tipo Proyecto</span>
+    <InputNumber @bind-Value="idBusqueda" class="form-control" placeholder="Ingrese ID" />
+    <button type="button" class="btn btn-outline-success" @onclick="BuscarTipo">Buscar</button>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(mensaje))
+{
+    <div class="@claseAviso" role="alert">@mensaje</div>
+}
+
+<h4>Formulario de Tipo Proyecto</h4>
+
+<EditForm Model="tipoActual" OnValidSubmit="GuardarSegunEstado" FormName="TipoProyectoForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Nombre</label>
+            <InputText class="form-control" @bind-Value="tipoActual.Nombre" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Descripción</label>
+            <InputText class="form-control" @bind-Value="tipoActual.Descripcion" />
+        </div>
+    </div>
+
+    <div class="mt-3 d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary">@textoBotonGuardar</button>
+        <button type="button" class="btn btn-danger" @onclick="EliminarTipo" disabled="@(!existeTipo)">Eliminar</button>
+    </div>
+</EditForm>
+
+<hr />
+
+@if (cargando)
+{
+    <p><em>Cargando tipos de proyecto...</em></p>
+}
+else if (listaTipos.Count == 0)
+{
+    <p>No hay tipos de proyecto disponibles.</p>
+}
+else
+{
+    <div class="table-container">
+        <table class="table table-striped text-white">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in listaTipos)
+                {
+                    <tr>
+                        <td>@t.Nombre</td>
+                        <td>@t.Descripcion</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    @onclick="@(() => CargarEnFormulario(t))">
+                                Cargar
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<TipoProyecto> listaTipos = new();
+    private TipoProyecto tipoActual { get; set; } = new();
+
+    private bool existeTipo = false;
+    private string textoBotonGuardar = "Crear";
+    private string mensaje = "";
+    private string claseAviso = "alert alert-info";
+    private bool cargando = false;
+
+    private int idBusqueda; // 🔍 ID para búsqueda
+    private const string urlBaseApi = "api/tipoproyecto";
+
+    protected override async Task OnInitializedAsync() => await CargarTipos();
+
+    private async Task CargarTipos()
+    {
+        try
+        {
+            cargando = true;
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<TipoProyecto>>>(urlBaseApi);
+            listaTipos = respuesta?.Datos ?? new();
+            mensaje = $"Se cargaron {listaTipos.Count} tipo(s) de proyecto.";
+            claseAviso = "alert alert-success";
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al listar tipos: {ex.Message}";
+            claseAviso = "alert alert-danger";
+        }
+        finally { cargando = false; }
+    }
+
+    private async Task BuscarTipo()
+    {
+        try
+        {
+            var consulta = new
+            {
+                consulta = "SELECT * FROM TipoProyecto WHERE Id = @Id",
+                parametros = new { Id = idBusqueda }
+            };
+
+            var respuestaHttp = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
+
+            if (respuestaHttp.IsSuccessStatusCode)
+            {
+                var resultado = await respuestaHttp.Content.ReadFromJsonAsync<JsonElement>();
+
+                if (resultado.TryGetProperty("resultados", out var datos) && datos.GetArrayLength() > 0)
+                {
+                    var t = datos[0];
+                    tipoActual = new TipoProyecto
+                    {
+                        Id = t.GetProperty("Id").GetInt32(),
+                        Nombre = t.GetProperty("Nombre").GetString()!,
+                        Descripcion = t.GetProperty("Descripcion").GetString()!
+                    };
+
+                    existeTipo = true;
+                    textoBotonGuardar = "Actualizar";
+                    mensaje = "Tipo de proyecto encontrado.";
+                    claseAviso = "alert alert-success";
+                }
+                else
+                {
+                    mensaje = "No se encontró el tipo de proyecto.";
+                    claseAviso = "alert alert-warning";
+                }
+            }
+            else
+            {
+                mensaje = $"Error: {respuestaHttp.ReasonPhrase}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al buscar tipo: {ex.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task GuardarSegunEstado()
+    {
+        if (existeTipo) await ActualizarTipo();
+        else await CrearTipo();
+    }
+
+    private async Task CrearTipo()
+    {
+        LimpiarMensajes();
+        try
+        {
+            tipoActual.Id = 0;
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, tipoActual);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensaje = "Tipo de proyecto creado correctamente.";
+                claseAviso = "alert alert-success";
+                await CargarTipos();
+                LimpiarFormulario();
+            }
+            else
+            {
+                mensaje = $"Error al crear tipo: {await respuesta.Content.ReadAsStringAsync()}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al crear tipo: {ex.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task ActualizarTipo()
+    {
+        LimpiarMensajes();
+        if (tipoActual.Id <= 0)
+        {
+            mensaje = "Debe indicar un tipo válido para actualizar.";
+            claseAviso = "alert alert-warning";
+            return;
+        }
+
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+            var ruta = $"{urlBaseApi}/Id/{tipoActual.Id}";
+            var tipoParaActualizar = new { tipoActual.Nombre, tipoActual.Descripcion };
+
+            var respuesta = await cliente.PutAsJsonAsync(ruta, tipoParaActualizar);
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensaje = "Tipo de proyecto actualizado correctamente.";
+                claseAviso = "alert alert-success";
+                await CargarTipos();
+            }
+            else
+            {
+                mensaje = $"Error al actualizar: {await respuesta.Content.ReadAsStringAsync()}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al actualizar tipo: {ex.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task EliminarTipo()
+    {
+        LimpiarMensajes();
+        if (tipoActual.Id <= 0)
+        {
+            mensaje = "Debe indicar un tipo válido para eliminar.";
+            claseAviso = "alert alert-warning";
+            return;
+        }
+
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+            var ruta = $"{urlBaseApi}/Id/{tipoActual.Id}?tabla=tipo_proyecto&esquema=dbo";
+            var respuesta = await cliente.DeleteAsync(ruta);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensaje = "Tipo de proyecto eliminado correctamente.";
+                claseAviso = "alert alert-success";
+                await CargarTipos();
+                LimpiarFormulario();
+            }
+            else
+            {
+                mensaje = $"No se pudo eliminar: {await respuesta.Content.ReadAsStringAsync()}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al eliminar tipo: {ex.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task ProbarConexion()
+    {
+        LimpiarMensajes();
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetAsync(urlBaseApi);
+            mensaje = respuesta.IsSuccessStatusCode
+                ? "Conexión con la API verificada."
+                : $"La API respondió con estado {(int)respuesta.StatusCode}.";
+            claseAviso = respuesta.IsSuccessStatusCode ? "alert alert-success" : "alert alert-warning";
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error de conexión: {ex.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private void CargarEnFormulario(TipoProyecto t)
+    {
+        tipoActual = new TipoProyecto
+        {
+            Id = t.Id,
+            Nombre = t.Nombre,
+            Descripcion = t.Descripcion
+        };
+        existeTipo = true;
+        textoBotonGuardar = "Actualizar";
+        mensaje = "Tipo de proyecto cargado en el formulario.";
+        claseAviso = "alert alert-info";
+    }
+
+    private void LimpiarMensajes()
+    {
+        mensaje = "";
+        claseAviso = "alert alert-info";
+    }
+
+    private void LimpiarFormulario()
+    {
+        tipoActual = new TipoProyecto();
+        existeTipo = false;
+        textoBotonGuardar = "Crear";
+        LimpiarMensajes();
+    }
+}

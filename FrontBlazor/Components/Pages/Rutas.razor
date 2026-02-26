@@ -1,0 +1,315 @@
+@page "/rutas"
+@using FrontendBlazorApi.Models
+@using FrontendBlazorApi.Servicios
+@using FrontendBlazorApi.Components
+@using System.Text.Json
+@inherits PaginaAutenticada
+@rendermode InteractiveServer
+
+@inject ServicioApiGenerico servicioApi
+@inject IJSRuntime JS
+
+<PageTitle>Gestión de Rutas</PageTitle>
+
+<h3>Gestión de Rutas del Sistema</h3>
+
+<div class="mb-3 d-flex gap-2">
+    <button type="button" class="btn btn-outline-primary" @onclick="CargarRutas" disabled="@cargando">Cargar Rutas</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="LimpiarFormulario" disabled="@cargando">Limpiar</button>
+</div>
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="@estiloMensaje" role="alert">@mensaje</div>
+}
+
+<h4>@(modoEdicion ? "Editar Ruta" : "Nueva Ruta")</h4>
+
+<EditForm Model="rutaActual" OnValidSubmit="GuardarRuta" FormName="formRuta">
+    <DataAnnotationsValidator />
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Ruta (Path)</label>
+            <InputText class="form-control" @bind-Value="rutaActual.RutaUrl"
+                       placeholder="/nombre-ruta" disabled="@modoEdicion" />
+            <ValidationMessage For="() => rutaActual.RutaUrl" />
+            <small class="text-muted">
+                @if (modoEdicion)
+                {
+                    @:La ruta no se puede modificar
+                }
+                else
+                {
+                    @:Debe empezar con / (ej: /usuarios, /proyectos)
+                }
+            </small>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Descripción</label>
+            <InputText class="form-control" @bind-Value="rutaActual.Descripcion"
+                       placeholder="Describe la funcionalidad de esta ruta" />
+            <ValidationMessage For="() => rutaActual.Descripcion" />
+        </div>
+    </div>
+
+    <div class="mt-3 d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary" disabled="@cargando">
+            @(modoEdicion ? "Actualizar" : "Crear")
+        </button>
+        @if (modoEdicion)
+        {
+            <button type="button" class="btn btn-danger" @onclick="() => EliminarRuta(rutaActual.RutaUrl)" disabled="@cargando">
+                Eliminar
+            </button>
+            <button type="button" class="btn btn-secondary" @onclick="LimpiarFormulario" disabled="@cargando">
+                Cancelar
+            </button>
+        }
+    </div>
+</EditForm>
+
+<hr />
+
+@if (cargando)
+{
+    <div class="table-loading">
+        Cargando rutas...
+    </div>
+}
+else if (rutas == null || !rutas.Any())
+{
+    <div class="alert alert-info">
+        <strong>ℹ️</strong> No hay rutas registradas.
+    </div>
+}
+else
+{
+    <div class="table-container">
+        <table class="table table-striped text-white">
+            <thead>
+                <tr>
+                    <th>Ruta</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ruta in rutas)
+                {
+                    <tr>
+                        <td>@ruta.RutaUrl</td>
+                        <td>@ruta.Descripcion</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    @onclick="() => CargarParaEditar(ruta)" disabled="@cargando">
+                                Cargar
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-2">
+        <span class="badge bg-primary">Total: @rutas.Count rutas</span>
+    </div>
+}
+
+@code {
+    private List<Ruta> rutas = new();
+    private Ruta rutaActual = new();
+    private string rutaOriginal = string.Empty;
+    private bool cargando = false;
+    private bool modoEdicion = false;
+    private string mensaje = string.Empty;
+    private string estiloMensaje = "alert alert-info";
+
+    protected override async Task OnAutenticacionVerificada()
+    {
+        await CargarDatosIniciales();
+    }
+
+    private async Task CargarDatosIniciales()
+    {
+        await CargarRutas();
+    }
+
+    private async Task CargarRutas()
+    {
+        try
+        {
+            cargando = true;
+
+            var parametros = new { Ruta = (string?)null };
+            var resultado = await servicioApi.EjecutarStoredProcedureConResultadosAsync("sp_SeleccionarRuta", parametros);
+
+            if (resultado?.Resultados != null && resultado.Resultados.Any())
+            {
+                rutas = resultado.Resultados.Select(r => new Ruta
+                {
+                    RutaUrl = ObtenerString(r, "ruta"),
+                    Descripcion = ObtenerString(r, "descripcion")
+                }).ToList();
+
+                mensaje = $"Se cargaron {rutas.Count} rutas.";
+                estiloMensaje = "alert alert-success";
+            }
+            else
+            {
+                rutas = new List<Ruta>();
+                mensaje = "No hay rutas registradas.";
+                estiloMensaje = "alert alert-info";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al cargar rutas: {ex.Message}";
+            estiloMensaje = "alert alert-danger";
+            rutas = new List<Ruta>();
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task GuardarRuta()
+    {
+        try
+        {
+            cargando = true;
+
+            if (string.IsNullOrWhiteSpace(rutaActual.RutaUrl))
+            {
+                mensaje = "Debe ingresar la ruta.";
+                estiloMensaje = "alert alert-warning";
+                return;
+            }
+
+            if (!rutaActual.RutaUrl.StartsWith("/"))
+            {
+                mensaje = "La ruta debe empezar con / (slash).";
+                estiloMensaje = "alert alert-warning";
+                return;
+            }
+
+            if (rutaActual.RutaUrl.Contains(" "))
+            {
+                mensaje = "La ruta no puede contener espacios.";
+                estiloMensaje = "alert alert-warning";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(rutaActual.Descripcion))
+            {
+                mensaje = "Debe ingresar la descripción.";
+                estiloMensaje = "alert alert-warning";
+                return;
+            }
+
+            if (modoEdicion)
+            {
+                var confirmacion = await JS.InvokeAsync<bool>("confirm",
+                    $"¿Está seguro de actualizar la ruta '{rutaOriginal}'?");
+
+                if (!confirmacion) return;
+
+                var parametros = new
+                {
+                    RutaOriginal = rutaOriginal,
+                    RutaNueva = rutaActual.RutaUrl,
+                    Descripcion = rutaActual.Descripcion
+                };
+
+                await servicioApi.EjecutarStoredProcedureAsync("sp_ActualizarRuta", parametros);
+                mensaje = $"Ruta '{rutaActual.RutaUrl}' actualizada correctamente.";
+                estiloMensaje = "alert alert-success";
+            }
+            else
+            {
+                var parametros = new
+                {
+                    Ruta = rutaActual.RutaUrl,
+                    Descripcion = rutaActual.Descripcion
+                };
+
+                await servicioApi.EjecutarStoredProcedureAsync("sp_InsertarRuta", parametros);
+                mensaje = $"Ruta '{rutaActual.RutaUrl}' creada correctamente.";
+                estiloMensaje = "alert alert-success";
+            }
+
+            await CargarRutas();
+            LimpiarFormulario();
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al guardar ruta: {ex.Message}";
+            estiloMensaje = "alert alert-danger";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task EliminarRuta(string ruta)
+    {
+        try
+        {
+            var confirmacion = await JS.InvokeAsync<bool>("confirm",
+                $"¿Está seguro de eliminar la ruta '{ruta}'? Esta acción no se puede deshacer.");
+
+            if (!confirmacion) return;
+
+            cargando = true;
+
+            var parametros = new { Ruta = ruta };
+            await servicioApi.EjecutarStoredProcedureAsync("sp_EliminarRuta", parametros);
+
+            mensaje = $"Ruta '{ruta}' eliminada correctamente.";
+            estiloMensaje = "alert alert-success";
+            await CargarRutas();
+            LimpiarFormulario();
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al eliminar ruta: {ex.Message}";
+            estiloMensaje = "alert alert-danger";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void CargarParaEditar(Ruta ruta)
+    {
+        rutaActual = new Ruta
+        {
+            RutaUrl = ruta.RutaUrl,
+            Descripcion = ruta.Descripcion
+        };
+        rutaOriginal = ruta.RutaUrl;
+        modoEdicion = true;
+        mensaje = "Ruta cargada en el formulario.";
+        estiloMensaje = "alert alert-info";
+    }
+
+    private void LimpiarFormulario()
+    {
+        rutaActual = new Ruta();
+        rutaOriginal = string.Empty;
+        modoEdicion = false;
+        mensaje = string.Empty;
+    }
+
+    private string ObtenerString(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return "";
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.String ? elem.GetString() ?? "" : elem.ToString();
+        return valor?.ToString() ?? "";
+    }
+}

@@ -1,0 +1,318 @@
+@page "/permisos"
+@using FrontendBlazorApi.Models
+@using FrontendBlazorApi.Servicios
+@using FrontendBlazorApi.Components
+@using System.Text.Json
+@inherits PaginaAutenticada
+@inject ServicioApiGenerico servicioApi
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>Gestión de Permisos</PageTitle>
+
+<h3>Gestión de Permisos</h3>
+
+<div class="mb-3 d-flex gap-2">
+    <button type="button" class="btn btn-outline-primary" @onclick="CargarPermisos" disabled="@cargando">Cargar Permisos</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="LimpiarFormulario" disabled="@cargando">Limpiar</button>
+</div>
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="@estiloMensaje" role="alert">@mensaje</div>
+}
+
+<h4>Asignar Permiso</h4>
+
+<EditForm Model="permisoActual" OnValidSubmit="AsignarPermiso" FormName="formPermiso">
+    <DataAnnotationsValidator />
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Ruta (Página)</label>
+            <InputSelect class="form-control" @bind-Value="permisoActual.RutaUrl">
+                <option value="">-- Seleccione una ruta --</option>
+                @foreach (var ruta in rutasDisponibles)
+                {
+                    <option value="@ruta.RutaUrl">@ruta.RutaUrl - @ruta.Descripcion</option>
+                }
+            </InputSelect>
+            <small class="text-muted">Página o módulo del sistema</small>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Rol</label>
+            <InputSelect class="form-control" @bind-Value="permisoActual.NombreRol">
+                <option value="">-- Seleccione un rol --</option>
+                @foreach (var rol in roles)
+                {
+                    <option value="@rol.Nombre">@rol.Nombre</option>
+                }
+            </InputSelect>
+            <small class="text-muted">Rol que tendrá acceso a la ruta</small>
+        </div>
+    </div>
+
+    <div class="mt-3 d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary" disabled="@cargando">
+            Asignar Permiso
+        </button>
+    </div>
+</EditForm>
+
+<hr />
+
+@if (cargando)
+{
+    <div class="table-loading">
+        Cargando permisos...
+    </div>
+}
+else if (permisos == null || !permisos.Any())
+{
+    <div class="alert alert-info">
+        <strong>ℹ️</strong> No hay permisos configurados.
+    </div>
+}
+else
+{
+    <div class="table-container">
+        <table class="table table-striped text-white">
+            <thead>
+                <tr>
+                    <th>Ruta</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var permiso in permisos)
+                {
+                    <tr>
+                        <td>@permiso.RutaUrl</td>
+                        <td>@permiso.NombreRol</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    @onclick="() => EliminarPermiso(permiso.RutaUrl, permiso.NombreRol)"
+                                    disabled="@cargando">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-2">
+        <span class="badge bg-primary">Total: @permisos.Count permisos</span>
+    </div>
+}
+
+@code {
+    private List<RutaRol> permisos = new();
+    private List<Ruta> rutasDisponibles = new();
+    private List<Rol> roles = new();
+    private RutaRol permisoActual = new();
+    private bool cargando = false;
+    private string mensaje = string.Empty;
+    private string estiloMensaje = "alert alert-info";
+
+    protected override async Task OnAutenticacionVerificada()
+    {
+        await CargarDatosIniciales();
+    }
+
+    private async Task CargarDatosIniciales()
+    {
+        await Task.WhenAll(
+            CargarPermisos(),
+            CargarRutas(),
+            CargarRoles()
+        );
+    }
+
+    private async Task CargarPermisos()
+    {
+        try
+        {
+            cargando = true;
+
+            var parametros = new { };
+            var resultado = await servicioApi.EjecutarStoredProcedureConResultadosAsync("listar_rutarol", parametros);
+
+            if (resultado?.Resultados != null && resultado.Resultados.Any())
+            {
+                permisos = resultado.Resultados.Select(d => new RutaRol
+                {
+                    RutaUrl = ObtenerString(d, "ruta"),
+                    NombreRol = ObtenerString(d, "rol")
+                }).ToList();
+
+                mensaje = $"Se cargaron {permisos.Count} permisos.";
+                estiloMensaje = "alert alert-success";
+            }
+            else
+            {
+                permisos = new List<RutaRol>();
+                mensaje = "No hay permisos configurados.";
+                estiloMensaje = "alert alert-info";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al cargar permisos: {ex.Message}";
+            estiloMensaje = "alert alert-danger";
+            permisos = new List<RutaRol>();
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task CargarRutas()
+    {
+        try
+        {
+            var parametros = new { Ruta = (string?)null };
+            var resultado = await servicioApi.EjecutarStoredProcedureConResultadosAsync("sp_SeleccionarRuta", parametros);
+
+            if (resultado?.Resultados != null && resultado.Resultados.Any())
+            {
+                rutasDisponibles = resultado.Resultados.Select(r => new Ruta
+                {
+                    RutaUrl = ObtenerString(r, "ruta"),
+                    Descripcion = ObtenerString(r, "descripcion")
+                }).ToList();
+            }
+            else
+            {
+                rutasDisponibles = new List<Ruta>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar rutas: {ex.Message}");
+            rutasDisponibles = new List<Ruta>();
+        }
+    }
+
+    private async Task CargarRoles()
+    {
+        try
+        {
+            var parametros = new { Id = (int?)null };
+            var resultado = await servicioApi.EjecutarStoredProcedureConResultadosAsync("sp_SeleccionarRol", parametros);
+
+            if (resultado?.Resultados != null && resultado.Resultados.Any())
+            {
+                roles = resultado.Resultados.Select(r => new Rol
+                {
+                    Id = Convert.ToInt32(r["id"]),
+                    Nombre = ObtenerString(r, "nombre")
+                }).ToList();
+            }
+            else
+            {
+                roles = new List<Rol>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar roles: {ex.Message}");
+            roles = new List<Rol>();
+        }
+    }
+
+    private async Task AsignarPermiso()
+    {
+        try
+        {
+            cargando = true;
+
+            if (string.IsNullOrWhiteSpace(permisoActual.RutaUrl))
+            {
+                mensaje = "Debe seleccionar una ruta.";
+                estiloMensaje = "alert alert-warning";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(permisoActual.NombreRol))
+            {
+                mensaje = "Debe seleccionar un rol.";
+                estiloMensaje = "alert alert-warning";
+                return;
+            }
+
+            var parametros = new
+            {
+                p_ruta = permisoActual.RutaUrl,
+                p_rol = permisoActual.NombreRol
+            };
+
+            await servicioApi.EjecutarStoredProcedureAsync("crear_rutarol", parametros);
+
+            mensaje = $"Permiso asignado: {permisoActual.NombreRol} puede acceder a {permisoActual.RutaUrl}.";
+            estiloMensaje = "alert alert-success";
+            await CargarPermisos();
+            LimpiarFormulario();
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al asignar permiso: {ex.Message}";
+            estiloMensaje = "alert alert-danger";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task EliminarPermiso(string ruta, string rol)
+    {
+        try
+        {
+            var confirmacion = await JS.InvokeAsync<bool>("confirm",
+                $"¿Está seguro de eliminar el permiso?\n\nRol: {rol}\nRuta: {ruta}");
+
+            if (!confirmacion) return;
+
+            cargando = true;
+
+            var parametros = new
+            {
+                p_ruta = ruta,
+                p_rol = rol
+            };
+
+            await servicioApi.EjecutarStoredProcedureAsync("eliminar_rutarol", parametros);
+
+            mensaje = $"Permiso eliminado correctamente.";
+            estiloMensaje = "alert alert-success";
+            await CargarPermisos();
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al eliminar permiso: {ex.Message}";
+            estiloMensaje = "alert alert-danger";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void LimpiarFormulario()
+    {
+        permisoActual = new RutaRol();
+        mensaje = string.Empty;
+    }
+
+    private string ObtenerString(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return "";
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.String ? elem.GetString() ?? "" : elem.ToString();
+        return valor?.ToString() ?? "";
+    }
+}

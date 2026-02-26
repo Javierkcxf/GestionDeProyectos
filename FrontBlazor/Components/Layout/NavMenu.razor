@@ -1,0 +1,392 @@
+﻿@* NavMenu.razor - Menú de navegación con control de acceso basado en roles *@
+
+@using FrontendBlazorApi.Servicios
+@inject ServicioAutenticacion ServicioAuth
+@inject NavigationManager Navigation
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Sistema de Gestión</a>
+        <button title="Toggle navigation" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        @* Enlace a la página Home (Index) - Visible para todos los usuarios autenticados *@
+        @if (MostrarInicio)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                    <span class="oi oi-home" aria-hidden="true"></span> Inicio
+                </NavLink>
+            </div>
+        }
+
+        @* SECCIÓN: CONFIGURACIÓN DEL SISTEMA - Solo Administrador *@
+        @if (EsAdmin)
+        {
+            <div class="nav-item px-3 mt-3">
+                <div class="nav-link text-muted small fw-bold text-uppercase">
+                    <i class="oi oi-cog me-2"></i>Configuración
+                </div>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="usuarios">
+                    <span class="oi oi-people" aria-hidden="true"></span> Usuarios
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="roles">
+                    <span class="oi oi-key" aria-hidden="true"></span> Roles
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="rutas">
+                    <span class="oi oi-link-intact" aria-hidden="true"></span> Rutas
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="permisos">
+                    <span class="oi oi-lock-locked" aria-hidden="true"></span> Permisos
+                </NavLink>
+            </div>
+        }
+
+        @* SECCIÓN: DATOS MAESTROS - Solo Administrador *@
+    
+            <div class="nav-item px-3 mt-3">
+                <div class="nav-link text-muted small fw-bold text-uppercase">
+                    <i class="oi oi-database me-2"></i>Datos Maestros
+                </div>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="tipos-responsable">
+                    <span class="oi oi-list-rich" aria-hidden="true"></span> Tipos Responsable
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="tipos-proyecto">
+                    <span class="oi oi-list-rich" aria-hidden="true"></span> Tipos Proyecto
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="estados">
+                    <span class="oi oi-list-rich" aria-hidden="true"></span> Estados
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="tipos-producto">
+                    <span class="oi oi-list-rich" aria-hidden="true"></span> Tipos Producto
+                </NavLink>
+            </div>
+    
+
+        @* SECCIÓN: GESTIÓN OPERATIVA *@
+        @if (PuedeVerGestionOperativa)
+        {
+            <div class="nav-item px-3 mt-3">
+                <div class="nav-link text-muted small fw-bold text-uppercase">
+                    <i class="oi oi-briefcase me-2"></i>Gestión Operativa
+                </div>
+            </div>
+
+            @if (PuedeVerProyectos)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="proyectos">
+                        <span class="oi oi-project" aria-hidden="true"></span> Proyectos
+                    </NavLink>
+                </div>
+            }
+
+            @if (PuedeVerProductos)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="productos">
+                        <span class="oi oi-box" aria-hidden="true"></span> Productos
+                    </NavLink>
+                </div>
+            }
+
+            @if (PuedeVerEntregables)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="entregables">
+                        <span class="oi oi-document" aria-hidden="true"></span> Entregables
+                    </NavLink>
+                </div>
+            }
+
+            @if (PuedeVerProductoEntregables)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="producto_entregables">
+                        <span class="oi oi-link-intact" aria-hidden="true"></span> Producto-Entregables
+                    </NavLink>
+                </div>
+            }
+
+            @if (PuedeVerActividades)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="actividades">
+                        <span class="oi oi-task" aria-hidden="true"></span> Actividades
+                    </NavLink>
+                </div>
+            }
+
+            @if (PuedeVerArchivos)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="archivos">
+                        <span class="oi oi-folder" aria-hidden="true"></span> Archivos
+                    </NavLink>
+                </div>
+            }
+        }
+            
+
+        @* SECCIÓN: GESTIÓN FINANCIERA *@
+        @if (PuedeVerFinanciero || PuedeVerDistribuciones || PuedeVerEjecuciones)
+        {
+            <div class="nav-item px-3 mt-3">
+                <div class="nav-link text-muted small fw-bold text-uppercase">
+                    <i class="oi oi-dollar me-2"></i>Financiero
+                </div>
+            </div>
+
+            @if (PuedeVerFinanciero)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="presupuestos">
+                        <span class="oi oi-dollar" aria-hidden="true"></span> Presupuestos
+                    </NavLink>
+                </div>
+            }
+
+            @if (PuedeVerDistribuciones)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="distribuciones-presupuesto">
+                        <span class="oi oi-split" aria-hidden="true"></span> Distribuciones
+                    </NavLink>
+                </div>
+            }
+
+            @if (PuedeVerEjecuciones)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="ejecuciones-presupuesto">
+                        <span class="oi oi-play-circle" aria-hidden="true"></span> Ejecuciones
+                    </NavLink>
+                </div>
+            }
+        }
+            
+        @* SECCIÓN: ESTRATÉGICO *@
+        @if (PuedeVerEstrategico)
+        {
+            <div class="nav-item px-3 mt-3">
+                <div class="nav-link text-muted small fw-bold text-uppercase">
+                    <i class="oi oi-target me-2"></i>Estratégico
+                </div>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="variables-estrategicas">
+                    <span class="oi oi-target" aria-hidden="true"></span> Variables Estratégicas
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="objetivos_estrategico">
+                    <span class="oi oi-bullseye" aria-hidden="true"></span> Objetivos Estratégicos
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="metas_estrategicas">
+                    <span class="oi oi-flag" aria-hidden="true"></span> Metas Estratégicas
+                </NavLink>
+            </div>
+
+            @if (PuedeVerMetasProyecto)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="metas_proyecto">
+                        <span class="oi oi-flag" aria-hidden="true"></span> Metas de Proyecto
+                    </NavLink>
+                </div>
+            }
+        }
+           
+        
+
+        @* SECCIÓN: RECURSOS HUMANOS *@
+        @if (PuedeVerRecursosHumanos)
+        {
+            <div class="nav-item px-3 mt-3">
+                <div class="nav-link text-muted small fw-bold text-uppercase">
+                    <i class="oi oi-people me-2"></i>Recursos Humanos
+                </div>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="responsables">
+                    <span class="oi oi-people" aria-hidden="true"></span> Responsables
+                </NavLink>
+            </div>
+        }
+
+        @* BOTÓN DE CERRAR SESIÓN *@
+        <div class="nav-item px-3 mt-4">
+            <hr class="my-3">
+            <button class="btn btn-outline-danger w-100" @onclick="CerrarSesion">
+                <i class="oi oi-account-logout me-2"></i> Cerrar Sesión
+            </button>
+        </div>
+    </nav>
+</div>
+
+@code {
+    private bool colapsado = true;
+
+    // Variables para controlar la visibilidad del menú
+    private bool MostrarInicio { get; set; } = false;
+    private bool EsAdmin { get; set; } = false;
+    private bool PuedeVerGestionOperativa { get; set; } = false;
+    private bool PuedeVerProyectos { get; set; } = false;
+    private bool PuedeVerProductos { get; set; } = false;
+    private bool PuedeVerEntregables { get; set; } = false;
+    private bool PuedeVerProductoEntregables { get; set; } = false;
+    private bool PuedeVerActividades { get; set; } = false;
+    private bool PuedeVerArchivos { get; set; } = false;
+    private bool PuedeVerFinanciero { get; set; } = false;
+    private bool PuedeVerDistribuciones { get; set; } = false;
+    private bool PuedeVerEjecuciones { get; set; } = false;
+    private bool PuedeVerEstrategico { get; set; } = false;
+    private bool PuedeVerMetasProyecto { get; set; } = false;
+    private bool PuedeVerRecursosHumanos { get; set; } = false;
+
+    /*
+        Propiedad que define la clase CSS aplicada al contenedor del menú.
+
+        Se usa un operador ternario:
+        - Si colapsado == true → retorna "collapse"
+        - Si colapsado == false → retorna null (sin clase)
+
+        Nota: Se declara como string? porque puede devolver un valor nulo.
+        Esto evita el warning CS8603 ("possible null reference return").
+    */
+    private string? NavMenuCssClass => colapsado ? "collapse" : null;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CargarPermisosMenu();
+            StateHasChanged();
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task CargarPermisosMenu()
+    {
+        try
+        {
+            // Verificar permisos y actualizar variables
+            MostrarInicio = await TienePermisoAsync("inicio");
+            EsAdmin = await EsAdministradorAsync();
+
+            // Gestión Operativa
+            PuedeVerProyectos = await TienePermisoAsync("proyectos");
+            PuedeVerProductos = await TienePermisoAsync("productos");
+            PuedeVerEntregables = await TienePermisoAsync("entregables");
+            PuedeVerProductoEntregables = await TienePermisoAsync("producto_entregables");
+            PuedeVerActividades = await TienePermisoAsync("actividades");
+            PuedeVerArchivos = await TienePermisoAsync("archivos");
+            PuedeVerGestionOperativa = PuedeVerProyectos || PuedeVerProductos || PuedeVerEntregables;
+
+            // Financiero
+            PuedeVerFinanciero = await TienePermisoAsync("presupuestos");
+            PuedeVerDistribuciones = await TienePermisoAsync("distribuciones-presupuesto");
+            PuedeVerEjecuciones = await TienePermisoAsync("ejecuciones-presupuesto");
+
+            // Estratégico
+            PuedeVerMetasProyecto = await TienePermisoAsync("metas_proyecto");
+            PuedeVerEstrategico = EsAdmin || PuedeVerMetasProyecto;
+
+            // Recursos Humanos
+            PuedeVerRecursosHumanos = await TienePermisoAsync("responsables");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando permisos del menú: {ex.Message}");
+        }
+    }
+
+    private void ToggleNavMenu()
+    {
+        colapsado = !colapsado;
+    }
+
+    private async Task CerrarSesion()
+    {
+        try
+        {
+            await ServicioAuth.CerrarSesionAsync();
+            // Redirigir al login
+            Navigation.NavigateTo("/login", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cerrar sesión: {ex.Message}");
+        }
+    }
+
+    // Método auxiliar para verificar permisos de ruta
+    private async Task<bool> TienePermisoAsync(string ruta)
+    {
+        try
+        {
+            return await ServicioAuth.TienePermisoParaRutaAsync(ruta);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    // Método para refrescar permisos manualmente (útil para testing)
+    public async Task RefrescarPermisosAsync()
+    {
+        try
+        {
+            await ServicioAuth.RefrescarPermisosUsuarioAsync();
+            await CargarPermisosMenu();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error refrescando permisos: {ex.Message}");
+        }
+    }
+
+    // Método auxiliar para verificar si el usuario es administrador
+    private async Task<bool> EsAdministradorAsync()
+    {
+        try
+        {
+            var roles = await ServicioAuth.ObtenerRolesUsuarioAsync();
+            return roles.Contains("Administrador");
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}

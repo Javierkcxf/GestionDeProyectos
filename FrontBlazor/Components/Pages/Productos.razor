@@ -1,0 +1,562 @@
+@page "/productos"
+
+@using System.Net.Http.Json
+@using FrontendBlazorApi.Models
+@using System.Text.Json
+@inject IHttpClientFactory fabricaHttp
+@rendermode InteractiveServer
+
+<PageTitle>Productos</PageTitle>
+
+    <h3>Gestión de Productos</h3>
+
+    <div class="mb-3 d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary" @onclick="ProbarConexion">Probar conexión</button>
+        <button type="button" class="btn btn-outline-primary" @onclick="CargarProductos">Mostrar todos</button>
+        <button type="button" class="btn btn-outline-dark" @onclick="LimpiarFormulario">Limpiar</button>
+    </div>
+    <div class="mb-3">
+        <label for="idBusqueda">Buscar por ID:</label>
+        <InputNumber id="idBusqueda" @bind-Value="idBusqueda" class="form-control" />
+        <button class="btn btn-primary mt-2" @onclick="BuscarProducto">Buscar</button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(mensaje))
+    {
+        <div class="@claseAviso" role="alert">@mensaje</div>
+    }
+
+    <h4>Formulario de Producto</h4>
+
+    <EditForm Model="ProductoActual" OnValidSubmit="GuardarSegunProducto" FormName="ProductoForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="row g-3">
+            <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-person text-primary"></i> Tipo de Producto
+                            </label>
+                            <InputSelect class="form-select" @bind-Value="ProductoActual.IdTipoProducto">
+                                <option value="">-- Seleccione --</option>
+                                @foreach (var c in listaTipoProductos)
+                                {
+                                    <option value="@c.Id">@c.Nombre (ID: @c.Id)</option>
+                                }
+                            </InputSelect>
+                        </div>
+             <div class="row g-3">
+                            <label class="form-label">Código</label>
+                            <InputText class="form-control" @bind-Value="ProductoActual.Codigo" />
+                        </div>
+            <div class="col-md-3">
+                            <label class="form-label">Descripción</label>
+                            <InputText class="form-control" @bind-Value="ProductoActual.Descripcion" />
+                        </div>
+            <div class="col-md-6">
+                <label class="form-label">Nombre</label>
+                <InputText class="form-control" @bind-Value="ProductoActual.Titulo" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Fecha Inicio</label>
+            <InputDate class="form-control" @bind-Value="ProductoActual.FechaInicio" />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Fecha Fin Prevista</label>
+                <InputDate class="form-control" @bind-Value="ProductoActual.FechaFinPrevista" />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Fecha Modificación</label>
+                <InputDate class="form-control" @bind-Value="ProductoActual.FechaModificacion" />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Fecha Finalización</label>
+                <InputDate class="form-control" @bind-Value="ProductoActual.FechaFinalizacion" />
+            </div>
+            <div class="row g-3">
+                <label class="form-label">Ruta Logo</label>
+                <InputText class="form-control" @bind-Value="ProductoActual.RutaLogo" />
+            </div>
+                
+        </div>
+
+        <div class="mt-3 d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary">@textoBotonGuardar</button>
+            <button type="button" class="btn btn-danger" @onclick="EliminarProducto" disabled="@(!existeProducto)">Eliminar</button>
+        </div>
+    </EditForm>
+
+    <hr />
+
+    @if (cargando)
+    {
+        <div class="table-loading">
+            Cargando Productos...
+        </div>
+    }
+    else if (listaProductos.Count == 0)
+    {
+        <div class="alert alert-info">
+            <strong>ℹ️</strong> No hay Productos disponibles.
+        </div>
+    }
+    else
+    {
+        <div class="table-container">
+            <table class="table table-striped text-white">
+                <thead>
+                    <tr>
+                    <th>Tipo de Producto</th>
+                    <th>Código</th>
+                    <th>Título</th>
+                    <th>Descripción</th>
+                    <th>Inicio</th>
+                    <th>Fin Prevista</th>
+                    <th>Modificación</th>
+                    <th>Finalización</th>
+                    <th>Ruta Logo</th>
+                    <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in listaProductos)
+                            {
+                                <tr>
+                                    <td>@listaTipoProductos.FirstOrDefault(u => u.Id == f.IdTipoProducto)?.Nombre</td>
+                                    <td>@f.Codigo</td>
+                                    <td>@f.Titulo</td>
+                                    <td>@f.Descripcion</td>
+                                    <td data-date>@f.FechaInicio?.ToString("yyyy-MM-dd")</td>
+                                    <td data-date>@f.FechaFinPrevista?.ToString("yyyy-MM-dd")</td>
+                                    <td data-date>@f.FechaModificacion?.ToString("yyyy-MM-dd")</td>
+                                    <td data-date>@f.FechaFinalizacion?.ToString("yyyy-MM-dd")</td>
+                                    <td>@f.RutaLogo</td>
+                                    <td>
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    @onclick="@(() => CargarEnFormulario(f))">
+                                Cargar
+                            </button>
+                        </td>
+                                </tr>
+                            }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @code {
+        private List<TipoProducto> listaTipoProductos = new();
+        private List<Producto> listaProductos = new();
+
+        [SupplyParameterFromForm]
+        private Producto ProductoActual { get; set; } = new();
+
+        private bool existeProducto = false;
+        private string textoBotonGuardar = "Crear";
+
+        private string mensaje = "";
+        private string claseAviso = "alert alert-info";
+        private bool cargando = false;
+
+        private const string urlBaseApi = "api/producto";
+        private const string urlProcedimientos = "api/procedimientos/ejecutarsp";
+        private const string urlConsultas = "api/consultas/ejecutarconsultaparametrizada";
+        private const string urlTipoProducto = "api/tipoProducto";
+        private const string urlResponsable = "api/responsable";
+
+        protected override async Task OnInitializedAsync()
+        {
+            await CargarProductos();
+            await CargarTipoProductos();
+        }
+        private async Task CargarTipoProductos()
+        {
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlTipoProducto);
+            
+            listaTipoProductos = respuesta?.Datos?.Select(d => new TipoProducto
+            {
+                Id = ObtenerInt(d, "Id"),
+                Nombre = ObtenerString(d, "Nombre"),
+                Descripcion = ObtenerString(d, "Descripcion")
+            }).ToList() ?? new();
+        }
+        catch { }
+    }
+
+        private async Task CargarProductos()
+        {
+            try
+            {
+                cargando = true;
+                var cliente = fabricaHttp.CreateClient("Api");
+                var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Producto>>>(urlBaseApi);
+                listaProductos = respuesta?.Datos ?? new List<Producto>();
+                mensaje = $"Se cargaron {listaProductos.Count} Producto(s).";
+                claseAviso = "alert alert-success";
+            }
+            catch (HttpRequestException httpError)
+            {
+                if (httpError.Message.Contains("404"))
+                {
+                    mensaje = "Error 404: La API no está ejecutándose o el endpoint no existe. Verifica que la API esté corriendo en http://localhost:5031/";
+                }
+                else if (httpError.Message.Contains("Connection refused") || httpError.Message.Contains("No connection"))
+                {
+                    mensaje = "Error de conexión: No se puede conectar a la API. Verifica que esté ejecutándose en http://localhost:5031/";
+                }
+                else
+                {
+                    mensaje = $"Error HTTP al listar Productos: {httpError.Message}";
+                }
+                claseAviso = "alert alert-danger";
+            }
+            catch (Exception error)
+            {
+                mensaje = $"Error al listar Productos: {error.Message}";
+                claseAviso = "alert alert-danger";
+            }
+            finally
+            {
+                cargando = false;
+            }
+        }
+        private int idBusqueda;
+
+        private async Task BuscarProducto()
+        {
+            try
+            {
+                var consulta = new
+                {
+                    consulta = "SELECT * FROM Producto WHERE Id = @Id",
+                    parametros = new { Id = idBusqueda }
+                };
+
+                var cliente = fabricaHttp.CreateClient("Api");
+                var respuestaHttp = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
+
+                if (respuestaHttp.IsSuccessStatusCode)
+                {
+                    var resultado = await respuestaHttp.Content.ReadFromJsonAsync<JsonElement>();
+                    Console.WriteLine(resultado.ToString());
+
+                    if (resultado.TryGetProperty("resultados", out var datos) && datos.GetArrayLength() > 0)
+                    {
+                        var primerProducto = datos[0];
+                        ProductoActual = new Producto
+                        {
+                            Id = primerProducto.GetProperty("Id").GetInt32(),
+                            Codigo = primerProducto.GetProperty("Codigo").GetString() ?? string.Empty,
+                            Titulo = primerProducto.GetProperty("Titulo").GetString() ?? string.Empty,
+                            Descripcion = primerProducto.GetProperty("Descripcion").GetString() ?? string.Empty,
+                            FechaInicio = primerProducto.GetProperty("FechaInicio").GetDateTime(),
+                            FechaFinPrevista = primerProducto.GetProperty("FechaFinPrevista").GetDateTime(),
+                            FechaModificacion = primerProducto.GetProperty("FechaModificacion").GetDateTime(),
+                            FechaFinalizacion = primerProducto.GetProperty("FechaFinalizacion").GetDateTime(),
+                        };
+
+                        existeProducto = true;
+                        textoBotonGuardar = "Actualizar";
+                        mensaje = string.Empty;
+                        claseAviso = "alert alert-success";
+                    }
+                    else
+                    {
+                        mensaje = "Producto no encontrado.";
+                        claseAviso = "alert alert-warning";
+                    }
+                }
+                else
+                {
+                    var detalle = await respuestaHttp.Content.ReadAsStringAsync();
+                    mensaje = $"Error: {respuestaHttp.ReasonPhrase} - {detalle}";
+                    claseAviso = "alert alert-danger";
+                }
+            }
+            catch (Exception ex)
+            {
+                mensaje = $"Error al buscar Producto: {ex.Message}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+
+        private async Task GuardarSegunProducto()
+        {
+            if (existeProducto)
+                await ActualizarProducto();
+            else
+                await CrearProducto();
+        }
+
+        private async Task CrearProducto()
+        {
+            LimpiarMensajes();
+
+            try
+            {
+                ProductoActual.Id = 0;
+
+                var cliente = fabricaHttp.CreateClient("Api");
+                var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, ProductoActual);
+
+                if (respuesta.IsSuccessStatusCode)
+                {
+                    mensaje = "Producto creado correctamente.";
+                    claseAviso = "alert alert-success";
+                    await CargarProductos();
+                    LimpiarFormulario();
+                }
+                else
+                {
+                    var detalle = await respuesta.Content.ReadAsStringAsync();
+                    mensaje = $"No se pudo crear el Producto. Detalle: {detalle}";
+                    claseAviso = "alert alert-danger";
+                }
+            }
+            catch (Exception error)
+            {
+                mensaje = $"Error al crear Producto: {error.Message}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+
+        private async Task ActualizarProducto()
+        {
+            LimpiarMensajes();
+
+            string id = (ProductoActual.Id).ToString()!;
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                mensaje = "Debe indicar un Producto válido para actualizar.";
+                claseAviso = "alert alert-warning";
+                return;
+            }
+
+            try
+            {
+                var cliente = fabricaHttp.CreateClient("Api");
+
+                string nombreClave = "Id";
+                string valorClave = ProductoActual.Id.ToString();
+
+                var ProductoParaActualizar = new
+                {
+                    IdTipoProducto = ProductoActual.IdTipoProducto,
+                    Codigo = ProductoActual.Codigo,
+                    Titulo = ProductoActual.Titulo,
+                    Descripcion = ProductoActual.Descripcion,
+                    FechaInicio = ProductoActual.FechaInicio,
+                    FechaFinPrevista = ProductoActual.FechaFinPrevista,
+                    FechaModificacion = ProductoActual.FechaModificacion,
+                    FechaFinalizacion = ProductoActual.FechaFinalizacion,
+                    RutaLogo = ProductoActual.RutaLogo
+                }; 
+
+                var ruta = $"{urlBaseApi}/{nombreClave}/{valorClave}";
+                var respuesta = await cliente.PutAsJsonAsync(ruta, ProductoParaActualizar);
+
+                if (respuesta.IsSuccessStatusCode)
+                {
+                    mensaje = "Producto actualizado correctamente.";
+                    claseAviso = "alert alert-success";
+                    await CargarProductos();
+                    existeProducto = true;
+                    textoBotonGuardar = "Actualizar";
+                }
+                else
+                {
+                    var detalle = await respuesta.Content.ReadAsStringAsync();
+                    mensaje = $"No se pudo actualizar el Producto. Detalle: {detalle}";
+                    claseAviso = "alert alert-danger";
+                }
+            }
+            catch (Exception error)
+            {
+                mensaje = $"Error al actualizar Producto: {error.Message}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+
+        private async Task EliminarProducto()
+        {
+            LimpiarMensajes();
+
+            if (ProductoActual.Id <= 0)
+            {
+                mensaje = "Debe indicar un Producto válido para eliminar.";
+                claseAviso = "alert alert-warning";
+                return;
+            }
+
+            try
+            {
+                var cliente = fabricaHttp.CreateClient("Api");
+
+                string tabla = "Producto";
+                string nombreClave = "Id";
+                string valorClave = ProductoActual.Id.ToString();
+                string esquema = "dbo";
+
+                var ruta = $"{urlBaseApi}/{nombreClave}/{valorClave}?tabla={tabla}&esquema={esquema}";
+
+                var respuesta = await cliente.DeleteAsync(ruta);
+
+                if (respuesta.IsSuccessStatusCode)
+                {
+                    mensaje = "Producto eliminado correctamente.";
+                    claseAviso = "alert alert-success";
+                    await CargarProductos();
+                    LimpiarFormulario();
+                }
+                else if (respuesta.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    var detalle = await respuesta.Content.ReadAsStringAsync();
+                    mensaje = $"No se puede eliminar el Producto. Detalle: {detalle}";
+                    claseAviso = "alert alert-warning";
+                }
+                else
+                {
+                    var detalle = await respuesta.Content.ReadAsStringAsync();
+                    mensaje = $"No se pudo eliminar el Producto. Detalle: {detalle}";
+                    claseAviso = "alert alert-danger";
+                }
+            }
+            catch (Exception error)
+            {
+                mensaje = $"Error al eliminar Producto: {error.Message}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+
+        private async Task ProbarConexion()
+        {
+            LimpiarMensajes();
+            try
+            {
+                var cliente = fabricaHttp.CreateClient("Api");
+                
+                // Mostrar mensaje de prueba
+                mensaje = "Probando conectividad...";
+                claseAviso = "alert alert-info";
+                StateHasChanged();
+                
+                var respuesta = await cliente.GetAsync(urlBaseApi);
+
+                if (respuesta.IsSuccessStatusCode)
+                {
+                    mensaje = "✅ Conexión exitosa con la API. El endpoint está disponible.";
+                    claseAviso = "alert alert-success";
+                }
+                else if (respuesta.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    mensaje = "❌ Error 404: El endpoint no existe. Verifica que la API tenga el endpoint 'api/Producto' configurado.";
+                    claseAviso = "alert alert-danger";
+                }
+                else
+                {
+                    mensaje = $"❌ La API respondió con Producto {(int)respuesta.StatusCode} - {respuesta.ReasonPhrase}";
+                    claseAviso = "alert alert-warning";
+                }
+            }
+            catch (HttpRequestException httpError)
+            {
+                if (httpError.Message.Contains("Connection refused") || httpError.Message.Contains("No connection"))
+                {
+                    mensaje = "❌ Error de conexión: No se puede conectar a la API. Verifica que esté ejecutándose en http://localhost:5031/";
+                }
+                else
+                {
+                    mensaje = $"❌ Error HTTP: {httpError.Message}";
+                }
+                claseAviso = "alert alert-danger";
+            }
+            catch (Exception error)
+            {
+                mensaje = $"❌ Error de conexión a la API: {error.Message}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+
+        private void CargarEnFormulario(Producto e)
+        {
+            ProductoActual = new Producto
+            {
+                Id = e.Id,
+                IdTipoProducto = e.IdTipoProducto,
+                Codigo = e.Codigo,
+                Titulo = e.Titulo,
+                Descripcion = e.Descripcion,
+                FechaInicio = e.FechaInicio,
+                FechaFinPrevista = e.FechaFinPrevista,
+                FechaModificacion = e.FechaModificacion,
+                FechaFinalizacion = e.FechaFinalizacion,
+                RutaLogo = e.RutaLogo
+            };
+
+            existeProducto = true;
+            textoBotonGuardar = "Actualizar";
+            mensaje = "Producto cargado en el formulario.";
+            claseAviso = "alert alert-info";
+        }
+
+        private void LimpiarMensajes()
+        {
+            mensaje = "";
+            claseAviso = "alert alert-info";
+        }
+
+        private void LimpiarFormulario()
+        {
+            ProductoActual = new Producto();
+            existeProducto = false;
+            textoBotonGuardar = "Crear";
+            LimpiarMensajes();
+        }
+        
+        private int ObtenerInt(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return 0;
+        
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.Number ? elem.GetInt32() : 0;
+        
+        return Convert.ToInt32(valor);
+    }
+
+
+    private decimal ObtenerDecimal(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return 0;
+        
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.Number ? elem.GetDecimal() : 0;
+        
+        return Convert.ToDecimal(valor);
+    }
+
+    private DateTime ObtenerDateTime(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return DateTime.Now;
+        
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.String ? elem.GetDateTime() : DateTime.Now;
+        
+        return Convert.ToDateTime(valor);
+    }
+
+    private string ObtenerString(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return "";
+        
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.String ? elem.GetString() ?? "" : elem.ToString();
+        
+        return valor?.ToString() ?? "";
+    }
+    }

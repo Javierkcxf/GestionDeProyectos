@@ -1,0 +1,942 @@
+@page "/entregables"
+
+@using System.Net.Http.Json
+@using System.Text.Json
+@using FrontendBlazorApi.Models
+@inject IHttpClientFactory fabricaHttp
+@inject IJSRuntime js
+@rendermode InteractiveServer
+
+<PageTitle>Entregables</PageTitle>
+
+<h3>Gestión de Entregables</h3>
+
+<div class="mb-3 d-flex gap-2">
+    <button type="button" class="btn btn-outline-secondary" @onclick="ProbarConexion">Probar conexión</button>
+    <button type="button" class="btn btn-outline-primary" @onclick="CargarEntregables">Mostrar todos</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="LimpiarFormulario">Limpiar</button>
+</div>
+<div class="mb-3 d-flex gap-2">
+    <InputText @bind-Value="codigoBusqueda" class="form-control" placeholder="Buscar por código..." style="width: 250px;" />
+    <button type="button" class="btn btn-outline-success" @onclick="BuscarPorCodigo">Buscar</button>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(mensaje))
+{
+    <div class="@claseAviso" role="alert">@mensaje</div>
+}
+
+<h4>Formulario de Entregable</h4>
+
+<EditForm Model="entregableActual" OnValidSubmit="GuardarSegunEstado" FormName="EntregableForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label">Código</label>
+            <InputText class="form-control" @bind-Value="entregableActual.Codigo" />
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Título</label>
+            <InputText class="form-control" @bind-Value="entregableActual.Titulo" />
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Descripción</label>
+            <InputText class="form-control" @bind-Value="entregableActual.Descripcion" />
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Fecha Inicio</label>
+            <InputDate class="form-control" @bind-Value="entregableActual.FechaInicio" />
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Fecha Fin Prevista</label>
+            <InputDate class="form-control" @bind-Value="entregableActual.FechaFinPrevista" />
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Fecha Modificación</label>
+            <InputDate class="form-control" @bind-Value="entregableActual.FechaModificacion" />
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Fecha Finalización</label>
+            <InputDate class="form-control" @bind-Value="entregableActual.FechaFinalizacion" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Responsable Inicial</label>
+            <select class="form-select" @bind="responsableSeleccionadoId">
+                <option value="0">-- Seleccione un responsable --</option>
+                @foreach (var r in listaResponsables)
+                {
+                    <option value="@r.Id">@r.Nombre</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Archivo Inicial</label>
+            <InputSelect class="form-select" @bind-Value="archivoSeleccionadoId">
+                <option value="0">-- Seleccione un archivo --</option>
+                @foreach (var a in listaArchivos)
+                {
+                    <option value="@a.Id">@a.Nombre (@a.Ruta)</option>
+                }
+            </InputSelect>
+        </div>
+    </div>
+
+    <div class="mt-3 d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary">@textoBotonGuardar</button>
+        <button type="button" class="btn btn-danger" @onclick="async () => await ConfirmarEliminarEntregable()" disabled="@(!existeEntregable)">Eliminar</button>
+    </div>
+</EditForm>
+
+@if (existeEntregable)
+{
+    <div class="mt-4">
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h5>Asignar Nuevo Responsable</h5>
+                <EditForm Model="responsableEntregableActual" OnValidSubmit="GuardarResponsableEntregable" FormName="ResponsableEntregableForm">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label class="form-label">Responsable</label>
+                        <InputSelect class="form-select" @bind-Value="responsableEntregableActual.IdResponsable">
+                            <option value="">-- Seleccione --</option>
+                            @foreach (var r in listaResponsables.Where(r => !listaResponsableEntregables.Any(re => re.IdEntregable == entregableActual.Id && re.IdResponsable == r.Id)))
+                            {
+                                <option value="@r.Id">@r.Nombre</option>
+                            }
+                        </InputSelect>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Asignar Responsable</button>
+                </EditForm>
+            </div>
+            <div class="col-md-6">
+                <h5>Responsables Asignados</h5>
+                @if (!listaResponsableEntregables.Any(re => re.IdEntregable == entregableActual.Id))
+                {
+                    <p>No hay responsables asignados.</p>
+                }
+                else
+                {
+                    <ul class="list-group">
+                        @foreach (var re in listaResponsableEntregables.Where(re => re.IdEntregable == entregableActual.Id))
+                        {
+                            var responsable = listaResponsables.FirstOrDefault(r => r.Id == re.IdResponsable);
+                            if (responsable != null)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    @responsable.Nombre
+                                    <button class="btn btn-danger btn-sm" @onclick="async () => await ConfirmarEliminarResponsable(re.IdResponsable, re.IdEntregable)">Quitar</button>
+                                </li>
+                            }
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<hr />
+
+@if (cargando)
+{
+    <p><em>Cargando entregables...</em></p>
+}
+else if (listaEntregables.Count == 0)
+{
+    <p>No hay entregables disponibles.</p>
+}
+else
+{
+    <div class="table-container">
+        <table class="table table-striped entregables-table text-white">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Título</th>
+                    <th>Descripción</th>
+                    <th>Archivo</th>
+                    <th>Responsable</th>
+                    <th>Productos</th>
+                    <th>Inicio</th>
+                    <th>Fin Prevista</th>
+                    <th>Modificación</th>
+                    <th>Finalización</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in listaEntregables)
+                {
+                    <tr>
+                        <td>@e.Codigo</td>
+                        <td>@e.Titulo</td>
+                        <td>@e.Descripcion</td>
+                        <td>
+                            @{
+                               
+                                var relacion = listaArchivoEntregables.FirstOrDefault(ae => ae.IdEntregable == e.Id);
+                                if (relacion == null)
+                                {
+                                    <text>Sin archivo</text>
+                                }
+                                else
+                                {
+                                    var archivo = listaArchivos.FirstOrDefault(a => a.Id == relacion.IdArchivo);
+                                    if (archivo != null)
+                                    {
+                                        @($"{archivo.Nombre} ({archivo.Tipo})")
+                                    }
+                                    else
+                                    {
+                                        <text>Archivo no encontrado (Id:@relacion.IdArchivo)</text>
+                                    }
+                                }
+                            }
+                        </td>
+                        <td>
+                            @{
+                                var responsables = listaResponsableEntregables
+                                    .Where(re => re.IdEntregable == e.Id)
+                                    .Select(re => listaResponsables.FirstOrDefault(r => r.Id == re.IdResponsable)?.Nombre)
+                                    .Where(n => n != null);
+                                @string.Join(", ", responsables)
+                            }
+                        </td>
+                        <td>
+                                @{
+                                    var productos = listaProducto_Entregables
+                                        .Where(re => re.IdEntregable == e.Id)
+                                        .Select(re => listaProductos.FirstOrDefault(r => r.Id == re.IdProducto)?.Titulo) 
+                                        .Where(n => !string.IsNullOrEmpty(n)) 
+                                        .Select(n => n!); 
+
+                                    @string.Join(", ", productos)
+                                }
+                            </td>
+                        <td data-date>@e.FechaInicio?.ToString("yyyy-MM-dd")</td>
+                        <td data-date>@e.FechaFinPrevista?.ToString("yyyy-MM-dd")</td>
+                        <td data-date>@e.FechaModificacion?.ToString("yyyy-MM-dd")</td>
+                        <td data-date>@e.FechaFinalizacion?.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    @onclick="@(() => CargarEnFormulario(e))">
+                                Cargar
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<Entregable> listaEntregables = new();
+    private List<Responsable> listaResponsables = new();
+    private List<Responsable_Entregable> listaResponsableEntregables = new();
+    private List<Archivo> listaArchivos = new();
+    private List<Archivo_Entregable> listaArchivoEntregables = new();
+    private List<Producto_Entregable> listaProducto_Entregables = new();
+    private List<Producto> listaProductos = new();
+    private Producto_Entregable Producto_EntregableActual = new();
+    private Entregable entregableActual { get; set; } = new();
+    private Responsable_Entregable responsableEntregableActual { get; set; } = new();
+    private int responsableSeleccionadoId { get; set; }
+    private int archivoSeleccionadoId { get; set; }
+
+    private bool existeProducto_Entregable = false;
+    private string textoBotonPE = "Asociar Producto";
+    private bool existeEntregable = false;
+    private bool existeResponsableEntregable = false;
+    private string textoBotonGuardar = "Crear";
+    private string textoBotonGuardarResponsable = "Asignar";
+
+    private string mensaje = "";
+    private string claseAviso = "alert alert-info";
+    private bool cargando = false;
+
+    private const string urlProducto_Entregable = "api/producto_entregable";
+    private const string urlProducto = "api/producto";
+    private const string urlBaseApi = "api/entregable";
+    private const string urlResponsable = "api/responsable";
+    private const string urlResponsableEntregable = "api/responsable_entregable";
+    private const string urlArchivo = "api/archivo";
+    private const string urlArchivoEntregable = "api/archivo_entregable";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarEntregables();
+        await CargarResponsables();
+        await CargarResponsablesEntregables();
+        await CargarArchivosDisponibles();
+        await CargarArchivosEntregables();
+        await CargarProductos();
+
+
+    }
+
+      private async Task CargarProductos()
+    {
+        var cliente = fabricaHttp.CreateClient("Api");
+        var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Producto>>>(urlProducto);
+        listaProductos = respuesta?.Datos ?? new List<Producto>();
+    }
+
+    private async Task CargarProductosEntregables()
+    {
+        var cliente = fabricaHttp.CreateClient("Api");
+        var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Producto_Entregable>>>(urlProducto_Entregable);
+        listaProducto_Entregables = respuesta?.Datos ?? new List<Producto_Entregable>();
+
+        foreach (var rel in listaProducto_Entregables)
+        {
+            var ent = listaEntregables.FirstOrDefault(x => x.Id == rel.IdEntregable);
+            if (ent != null) ent.IdProductoRelacionado = rel.IdProducto;
+        }
+    }
+    private async Task CargarArchivosEntregables()
+    {
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Archivo_Entregable>>>(urlArchivoEntregable);
+            listaArchivoEntregables = respuesta?.Datos ?? new List<Archivo_Entregable>();
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al cargar archivos de entregables: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task CargarArchivosDisponibles()
+    {
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Archivo>>>(urlArchivo);
+            listaArchivos = respuesta?.Datos ?? new List<Archivo>();
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al cargar archivos: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task CargarResponsablesEntregables()
+    {
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Responsable_Entregable>>>(urlResponsableEntregable);
+            listaResponsableEntregables = respuesta?.Datos ?? new List<Responsable_Entregable>();
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al cargar responsables de entregables: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task CargarResponsables()
+    {
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlResponsable);
+
+            listaResponsables = respuesta?.Datos?.Select(d => new Responsable
+            {
+                Id = ObtenerInt(d, "Id"),
+                IdTipoResponsable = ObtenerInt(d, "IdTipoResponsable"),
+                IdUsuario = ObtenerInt(d, "IdUsuario"),
+                Nombre = ObtenerString(d, "Nombre")
+            }).ToList() ?? new();
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al cargar responsables: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task CargarEntregables()
+    {
+        try
+        {
+            cargando = true;
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Entregable>>>(urlBaseApi);
+            listaEntregables = respuesta?.Datos ?? new List<Entregable>();
+            mensaje = $"Se cargaron {listaEntregables.Count} entregable(s).";
+            claseAviso = "alert alert-success";
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al listar entregables: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private string codigoBusqueda = "";
+
+    private async Task BuscarPorCodigo()
+    {
+        LimpiarMensajes();
+
+        if (string.IsNullOrWhiteSpace(codigoBusqueda))
+        {
+            mensaje = "Por favor, ingresa un código para buscar.";
+            claseAviso = "alert alert-warning";
+            return;
+        }
+
+        try
+        {
+            cargando = true;
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Entregable>>>(urlBaseApi);
+
+            if (respuesta?.Datos != null && respuesta.Datos.Count > 0)
+            {
+                var entregable = respuesta.Datos.FirstOrDefault(e =>
+                    !string.IsNullOrEmpty(e.Codigo) &&
+                    e.Codigo.Equals(codigoBusqueda, StringComparison.OrdinalIgnoreCase));
+
+                if (entregable != null)
+                {
+                    CargarEnFormulario(entregable);
+                    mensaje = "Entregable encontrado correctamente.";
+                    claseAviso = "alert alert-success";
+                }
+                else
+                {
+                    mensaje = $"No se encontró un entregable con el código '{codigoBusqueda}'.";
+                    claseAviso = "alert alert-warning";
+                    LimpiarFormulario();
+                }
+            }
+            else
+            {
+                mensaje = "No hay entregables disponibles para buscar.";
+                claseAviso = "alert alert-warning";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al buscar entregable: {ex.Message}";
+            claseAviso = "alert alert-danger";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task GuardarSegunEstado()
+    {
+        // Depuración
+        mensaje = $"Responsable seleccionado ID: {responsableSeleccionadoId}";
+        await Task.Delay(1000); // Para poder ver el mensaje
+
+        if (existeEntregable)
+            await ActualizarEntregable();
+        else
+            await CrearEntregable();
+    }
+
+    private async Task CrearEntregable()
+    {
+        LimpiarMensajes();
+
+        try
+        {
+            entregableActual.Id = 0;
+
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, entregableActual);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                // Refrescar la lista y localizar el entregable creado para obtener su Id
+                await CargarEntregables();
+
+                Entregable? creado = null;
+                if (!string.IsNullOrWhiteSpace(entregableActual.Codigo))
+                {
+                    creado = listaEntregables.FirstOrDefault(x => x.Codigo == entregableActual.Codigo && x.Titulo == entregableActual.Titulo);
+                }
+                else if (!string.IsNullOrWhiteSpace(entregableActual.Titulo))
+                {
+                    creado = listaEntregables.FirstOrDefault(x => x.Titulo == entregableActual.Titulo && x.FechaInicio == entregableActual.FechaInicio);
+                }
+
+                try
+                {
+                    if (creado != null && responsableSeleccionadoId > 0)
+                    {
+                        var cliente2 = fabricaHttp.CreateClient("Api");
+                        var nuevoResponsableEntregable = new Responsable_Entregable
+                        {
+                            IdEntregable = creado.Id,
+                            IdResponsable = responsableSeleccionadoId
+                        };
+
+                        var respuestaAsignacion = await cliente2.PostAsJsonAsync(urlResponsableEntregable, nuevoResponsableEntregable);
+                        if (respuestaAsignacion.IsSuccessStatusCode)
+                        {
+                            mensaje = "Entregable creado y responsable asignado correctamente.";
+                            claseAviso = "alert alert-success";
+                        }
+                        else
+                        {
+                            var detalleError = await respuestaAsignacion.Content.ReadAsStringAsync();
+                            mensaje = $"Entregable creado pero no se pudo asignar el responsable. Detalle: {detalleError}";
+                            claseAviso = "alert alert-warning";
+                        }
+                    }
+                    // Intentar asignar archivo inicial si fue seleccionado
+                    if (creado != null && archivoSeleccionadoId > 0)
+                    {
+                        try
+                        {
+                            var cliente3 = fabricaHttp.CreateClient("Api");
+                            var nuevaRelacion = new Archivo_Entregable
+                            {
+                                IdArchivo = archivoSeleccionadoId,
+                                IdEntregable = creado.Id
+                            };
+                            var respArchivo = await cliente3.PostAsJsonAsync(urlArchivoEntregable, nuevaRelacion);
+                            if (respArchivo.IsSuccessStatusCode)
+                            {
+                                mensaje = mensaje + " Archivo asignado correctamente.";
+                                claseAviso = "alert alert-success";
+                                // refrescar relaciones para que se muestre en la tabla
+                                await CargarArchivosEntregables();
+                            }
+                            else
+                            {
+                                var det = await respArchivo.Content.ReadAsStringAsync();
+                                mensaje = mensaje + $" Pero no se pudo asignar el archivo. Detalle: {det}";
+                                claseAviso = "alert alert-warning";
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            mensaje = mensaje + $" Pero ocurrió un error al asignar el archivo: {ex.Message}";
+                            claseAviso = "alert alert-danger";
+                        }
+                    }
+                    else
+                    {
+                        // No hay responsable seleccionado o no se pudo localizar el creado
+                        if (responsableSeleccionadoId > 0 && creado == null)
+                        {
+                            mensaje = "Entregable creado pero no se pudo localizar el registro recién creado para asignar el responsable.";
+                            claseAviso = "alert alert-warning";
+                        }
+                        else
+                        {
+                            mensaje = "Entregable creado correctamente.";
+                            claseAviso = "alert alert-success";
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    mensaje = $"Entregable creado pero ocurrió un error al asignar el responsable: {ex.Message}";
+                    claseAviso = "alert alert-danger";
+                }
+
+                await CargarResponsablesEntregables();
+                LimpiarFormulario();
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                mensaje = $"No se pudo crear el entregable. Detalle: {detalle}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al crear entregable: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task ActualizarEntregable()
+    {
+        LimpiarMensajes();
+
+        if (entregableActual.Id <= 0)
+        {
+            mensaje = "Debe indicar un entregable válido para actualizar.";
+            claseAviso = "alert alert-warning";
+            return;
+        }
+
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+
+            string nombreClave = "Id";
+            string valorClave = entregableActual.Id.ToString();
+
+            var entregableParaActualizar = new
+            {
+                Codigo = entregableActual.Codigo,
+                Titulo = entregableActual.Titulo,
+                Descripcion = entregableActual.Descripcion,
+                FechaInicio = entregableActual.FechaInicio,
+                FechaFinPrevista = entregableActual.FechaFinPrevista,
+                FechaModificacion = entregableActual.FechaModificacion,
+                FechaFinalizacion = entregableActual.FechaFinalizacion
+            };
+
+            var ruta = $"{urlBaseApi}/{nombreClave}/{valorClave}";
+            var respuesta = await cliente.PutAsJsonAsync(ruta, entregableParaActualizar);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensaje = "Entregable actualizado correctamente.";
+                claseAviso = "alert alert-success";
+
+                // === BLOQUE NUEVO: Actualizar o asignar archivo ===
+                if (archivoSeleccionadoId > 0)
+                {
+                    try
+                    {
+                        var clienteArchivo = fabricaHttp.CreateClient("Api");
+
+                        // Verificar si ya existe una relación entre este entregable y un archivo
+                        var relacionExistente = listaArchivoEntregables
+                            .FirstOrDefault(ae => ae.IdEntregable == entregableActual.Id);
+
+                        HttpResponseMessage respuestaArchivo;
+
+                        if (relacionExistente != null)
+                        {
+                            // Actualizar relación existente (PUT)
+                            var rutaArchivo = $"{urlArchivoEntregable}/IdArchivo,IdEntregable/{relacionExistente.IdArchivo},{relacionExistente.IdEntregable}";
+                            var nuevaRelacion = new Archivo_Entregable
+                            {
+                                IdArchivo = archivoSeleccionadoId,
+                                IdEntregable = entregableActual.Id
+                            };
+                            respuestaArchivo = await clienteArchivo.PutAsJsonAsync(rutaArchivo, nuevaRelacion);
+                        }
+                        else
+                        {
+                            // Crear nueva relación (POST)
+                            var nuevaRelacion = new Archivo_Entregable
+                            {
+                                IdArchivo = archivoSeleccionadoId,
+                                IdEntregable = entregableActual.Id
+                            };
+                            respuestaArchivo = await clienteArchivo.PostAsJsonAsync(urlArchivoEntregable, nuevaRelacion);
+                        }
+
+                        if (respuestaArchivo.IsSuccessStatusCode)
+                        {
+                            await CargarArchivosEntregables();
+                            mensaje += " Archivo asignado correctamente.";
+                            claseAviso = "alert alert-success";
+                        }
+                        else
+                        {
+                            var detalleArchivo = await respuestaArchivo.Content.ReadAsStringAsync();
+                            mensaje += $" No se pudo asignar el archivo. Detalle: {detalleArchivo}";
+                            claseAviso = "alert alert-warning";
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        mensaje += $" Error al actualizar archivo: {ex.Message}";
+                        claseAviso = "alert alert-danger";
+                    }
+                }
+                // === FIN BLOQUE NUEVO ===
+
+                await CargarEntregables();
+                existeEntregable = true;
+                textoBotonGuardar = "Actualizar";
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                mensaje = $"No se pudo actualizar el entregable. Detalle: {detalle}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al actualizar entregable: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+
+    private async Task EliminarEntregable()
+    {
+        LimpiarMensajes();
+
+        if (entregableActual.Id <= 0)
+        {
+            mensaje = "Debe indicar un entregable válido para eliminar.";
+            claseAviso = "alert alert-warning";
+            return;
+        }
+
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+
+            string tabla = "entregable";
+            string nombreClave = "Id";
+            string valorClave = entregableActual.Id.ToString();
+            string esquema = "dbo";
+
+            var ruta = $"{urlBaseApi}/{nombreClave}/{valorClave}?tabla={tabla}&esquema={esquema}";
+
+            var respuesta = await cliente.DeleteAsync(ruta);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensaje = "Entregable eliminado correctamente.";
+                claseAviso = "alert alert-success";
+                await CargarEntregables();
+                
+                await CargarResponsablesEntregables();
+                await CargarArchivosEntregables();
+                LimpiarFormulario();
+            }
+            else if (respuesta.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                mensaje = $"No se puede eliminar el entregable. Detalle: {detalle}";
+                claseAviso = "alert alert-warning";
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                mensaje = $"No se pudo eliminar el entregable. Detalle: {detalle}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al eliminar entregable: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task ProbarConexion()
+    {
+        LimpiarMensajes();
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.GetAsync(urlBaseApi);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensaje = "Conexión con la API verificada.";
+                claseAviso = "alert alert-success";
+            }
+            else
+            {
+                mensaje = $"La API respondió con estado {(int)respuesta.StatusCode}.";
+                claseAviso = "alert alert-warning";
+            }
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error de conexión a la API: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private void CargarEnFormulario(Entregable e)
+    {
+        entregableActual = new Entregable
+        {
+            Id = e.Id,
+            Codigo = e.Codigo,
+            Titulo = e.Titulo,
+            Descripcion = e.Descripcion,
+            // Removed IdResponsable field
+            FechaInicio = e.FechaInicio,
+            FechaFinPrevista = e.FechaFinPrevista,
+            FechaModificacion = e.FechaModificacion,
+            FechaFinalizacion = e.FechaFinalizacion
+        };
+
+        existeEntregable = true;
+        textoBotonGuardar = "Actualizar";
+        mensaje = "Entregable cargado en el formulario.";
+        claseAviso = "alert alert-info";
+    }
+
+    private void LimpiarMensajes()
+    {
+        mensaje = "";
+        claseAviso = "alert alert-info";
+    }
+
+    private void LimpiarFormulario()
+    {
+        entregableActual = new Entregable();
+        existeEntregable = false;
+        textoBotonGuardar = "Crear";
+        responsableSeleccionadoId = 0;
+        archivoSeleccionadoId = 0;
+        LimpiarMensajes();
+    }
+
+    private int ObtenerInt(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return 0;
+
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.Number ? elem.GetInt32() : 0;
+
+        return Convert.ToInt32(valor);
+    }
+
+    private string ObtenerString(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return "";
+
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.String ? elem.GetString() ?? "" : elem.ToString();
+
+        return valor?.ToString() ?? "";
+    }
+
+    private async Task GuardarResponsableEntregable()
+    {
+        if (entregableActual.Id <= 0)
+        {
+            mensaje = "Debe seleccionar un entregable primero.";
+            claseAviso = "alert alert-warning";
+            return;
+        }
+
+        if (responsableEntregableActual.IdResponsable <= 0)
+        {
+            mensaje = "Debe seleccionar un responsable.";
+            claseAviso = "alert alert-warning";
+            return;
+        }
+
+        try
+        {
+            responsableEntregableActual.IdEntregable = entregableActual.Id;
+
+            var cliente = fabricaHttp.CreateClient("Api");
+            var respuesta = await cliente.PostAsJsonAsync(urlResponsableEntregable, responsableEntregableActual);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensaje = "Responsable asignado correctamente.";
+                claseAviso = "alert alert-success";
+                await CargarResponsablesEntregables();
+                responsableEntregableActual = new Responsable_Entregable();
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                mensaje = $"No se pudo asignar el responsable. Detalle: {detalle}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al asignar responsable: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+
+    private async Task ConfirmarEliminarResponsable(int idResponsable, int idEntregable)
+    {
+        var titulo = listaResponsables.FirstOrDefault(r => r.Id == idResponsable)?.Nombre ?? idResponsable.ToString();
+        var confirmar = await js.InvokeAsync<bool>("confirm", $"¿Estás seguro que deseas eliminar al responsable '{titulo}' (ID {idResponsable}) de este entregable (ID {idEntregable})?");
+        if (!confirmar) return;
+        await EliminarResponsableEntregable(idResponsable, idEntregable);
+    }
+
+    private async Task ConfirmarEliminarEntregable()
+    {
+        if (entregableActual == null || entregableActual.Id <= 0)
+        {
+            mensaje = "Debe seleccionar un entregable válido.";
+            claseAviso = "alert alert-warning";
+            return;
+        }
+
+        var nombre = !string.IsNullOrWhiteSpace(entregableActual.Titulo) ? entregableActual.Titulo : entregableActual.Codigo;
+        var confirmar = await js.InvokeAsync<bool>("confirm", $"¿Estás seguro que deseas eliminar el entregable '{nombre}' (ID {entregableActual.Id})?");
+        if (!confirmar) return;
+        await EliminarEntregable();
+    }
+
+    private async Task EliminarResponsableEntregable(int idResponsable, int idEntregable)
+    {
+        if (idResponsable <= 0 || idEntregable <= 0)
+        {
+            mensaje = "Debe indicar un responsable y entregable válidos.";
+            claseAviso = "alert alert-warning";
+            return;
+        }
+
+        try
+        {
+            var cliente = fabricaHttp.CreateClient("Api");
+
+            string tabla = "responsable_entregable";
+            string esquema = "dbo";
+
+            // Use composite key path like other components: IdResponsable,IdEntregable/{val1},{val2}
+            var ruta = $"{urlResponsableEntregable}/IdResponsable,IdEntregable/{idResponsable},{idEntregable}?tabla={tabla}&esquema={esquema}";
+            var respuesta = await cliente.DeleteAsync(ruta);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensaje = "Responsable removido correctamente.";
+                claseAviso = "alert alert-success";
+                await CargarResponsablesEntregables();
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                mensaje = $"No se pudo remover el responsable. Detalle: {detalle}";
+                claseAviso = "alert alert-danger";
+            }
+        }
+        catch (Exception error)
+        {
+            mensaje = $"Error al remover responsable: {error.Message}";
+            claseAviso = "alert alert-danger";
+        }
+    }
+}
