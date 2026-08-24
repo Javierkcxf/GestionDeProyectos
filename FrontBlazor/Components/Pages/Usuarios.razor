@@ -293,7 +293,7 @@ h1:focus {
 
 .home-container {
     background-image: url(/img/fondo2.png);
-    background-color: #000000;
+    background-color: #262626;
     color: #ffffff;
     min-height: 100vh;
     padding: 20px;
@@ -335,7 +335,7 @@ h1:focus {
 .page{
     /* Página sin imagen de fondo: fondo sólido para todas las páginas excepto Home */
     background-image: none;
-    background-color: #000000;
+    background-color: #262626;
     background-size: auto;
 }
 
@@ -370,26 +370,26 @@ p {
 }
 
 body {
-    background-color: #000000 !important;
+    background-color: #262626 !important;
     color: #ffffff;
 }
 
 /* Identifica el contenedor principal de tus páginas */
 .page {
-    background-color: #000000;
+    background-color: #262626;
     color: #ffffff;
 }
 
 .content {
     background-image: none;
-    background-color: #000000;
+    background-color: #262626;
     color: #ffffff;
     padding-top: 1.1rem;
 }
 
 main {
     background-image: none;
-    background-color: #000000;
+    background-color: #262626;
     color: #ffffff;
 }
 
@@ -921,7 +921,7 @@ p, label, li {
             {
                 roles = resultado.Resultados.Select(r => new Rol
                 {
-                    Id = Convert.ToInt32(r["id"]),
+                    Id = ObtenerInt(r, "id"),
                     Nombre = r["nombre"]?.ToString() ?? ""
                 }).ToList();
             }
@@ -1166,5 +1166,13 @@ p, label, li {
         var colores = new[] { "bg-primary", "bg-success", "bg-info", "bg-warning text-dark", "bg-danger", "bg-secondary" };
         var hash = Math.Abs(nombreRol.GetHashCode());
         return colores[hash % colores.Length];
+    }
+
+    private int ObtenerInt(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return 0;
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.Number ? elem.GetInt32() : int.Parse(elem.GetString() ?? "0");
+        return Convert.ToInt32(valor);
     }
 }

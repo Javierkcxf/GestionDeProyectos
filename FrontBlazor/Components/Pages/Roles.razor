@@ -289,7 +289,7 @@ h1:focus {
 
 .home-container {
     background-image: url(/img/fondo2.png);
-    background-color: #000000;
+    background-color: #262626;
     color: #ffffff;
     min-height: 100vh;
     padding: 20px;
@@ -331,7 +331,7 @@ h1:focus {
 .page{
     /* Página sin imagen de fondo: fondo sólido para todas las páginas excepto Home */
     background-image: none;
-    background-color: #000000;
+    background-color: #262626;
     background-size: auto;
 }
 
@@ -366,26 +366,26 @@ p {
 }
 
 body {
-    background-color: #000000 !important;
+    background-color: #262626 !important;
     color: #ffffff;
 }
 
 /* Identifica el contenedor principal de tus páginas */
 .page {
-    background-color: #000000;
+    background-color: #262626;
     color: #ffffff;
 }
 
 .content {
     background-image: none;
-    background-color: #000000;
+    background-color: #262626;
     color: #ffffff;
     padding-top: 1.1rem;
 }
 
 main {
     background-image: none;
-    background-color: #000000;
+    background-color: #262626;
     color: #ffffff;
 }
 
@@ -730,6 +730,29 @@ p, label, li {
     background-color: rgba(108, 117, 125, 0.7) !important;
 }
 
+.badge.bg-primary {
+    background-color: rgba(0, 102, 143, 0.8) !important;
+    color: #ffffff !important;
+}
+
+/* Superficies "bg-light" de Bootstrap: en este tema oscuro significan
+   "un poco más claras que el fondo", no blancas — si no, el texto blanco
+   que usa el resto de la página queda ilegible sobre ellas. */
+.bg-light {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    color: #ffffff;
+}
+
+.bg-light.text-primary,
+.container-fluid .bg-light .text-primary {
+    color: #6FD3E8 !important;
+}
+
+.bg-light.text-muted,
+.container-fluid .bg-light .text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
 /* ===== SOBRESCRIBIR CLASES DE COLOR DE BOOTSTRAP ===== */
 
 .text-primary,
@@ -928,7 +951,7 @@ p, label, li {
             {
                 roles = resultado.Resultados.Select(r => new Rol
                 {
-                    Id = Convert.ToInt32(r["id"]),
+                    Id = ObtenerInt(r, "id"),
                     Nombre = ObtenerString(r, "nombre")
                 }).ToList();
 
@@ -1091,6 +1114,14 @@ p, label, li {
         if (valor is JsonElement elem)
             return elem.ValueKind == JsonValueKind.String ? elem.GetString() ?? "" : elem.ToString();
         return valor?.ToString() ?? "";
+    }
+
+    private int ObtenerInt(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return 0;
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.Number ? elem.GetInt32() : int.Parse(elem.GetString() ?? "0");
+        return Convert.ToInt32(valor);
     }
 
     private string ObtenerColorRol(string nombreRol)

@@ -1,0 +1,111 @@
+/*
+  Sistema de diseño — capa de tokens.
+
+  Paleta de marca (IGGA), recibida el 23 ago 2026:
+    Primario           #00668F
+    Hover / Énfasis     #005A7D
+    Secundario          #356D84
+    Complementario      #6F98AA
+    Neutro              #9FBAC7
+    Fondo claro         #DDE7EB
+    Fondo principal     #F8FAFB
+    Tarjetas / Paneles  #FFFFFF
+    Bordes              #DDE7EB
+    Texto principal     #243746
+    Texto secundario    #6F7E88
+
+  Los valores marcados "(marca)" abajo son literales del manual. Los marcados
+  "(derivado)" son extensiones mías -tono claro del acento, modo oscuro completo,
+  variantes de borde/superficie- construidas sobre la misma familia de azules,
+  con la libertad de aplicación que se autorizó explícitamente.
+*/
+
+:root {
+    --ground: #F8FAFB;          /* marca: fondo principal */
+    --surface: #FFFFFF;         /* marca: tarjetas / paneles */
+    --surface-sunk: #EEF3F5;    /* derivado: paso entre fondo y tarjeta */
+    --surface-raised: #FFFFFF;
+
+    --ink: #243746;             /* marca: texto principal */
+    --ink-muted: #6F7E88;       /* marca: texto secundario */
+    --ink-faint: #9AA8B0;       /* derivado: un paso más claro que el texto secundario */
+
+    --rule: #DDE7EB;            /* marca: bordes */
+    --rule-strong: #C3D2D9;     /* derivado: borde de mayor contraste */
+
+    --accent: #00668F;          /* marca: primario */
+    --accent-strong: #005A7D;   /* marca: hover / énfasis */
+    --accent-soft: #E0EDF2;     /* derivado: tinte claro del primario, para chips y fondos activos */
+
+    /* Semáforos de estado — independientes del acento, no forman parte de la identidad de marca */
+    --ok: #276749;
+    --ok-soft: #E3F3E9;
+    --warn: #92600C;
+    --warn-soft: #FBEED9;
+    --critical: #9B2C2C;
+    --critical-soft: #FAE3E1;
+
+    --shadow: 0 1px 2px rgba(36, 55, 70, .06), 0 10px 28px -14px rgba(36, 55, 70, .18);
+
+    --font-display: "Archivo Expanded", "Archivo", sans-serif;
+    --font-body: "Archivo", -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+/* Modo oscuro: no está en el manual de marca — derivado sobre la misma familia
+   de azules institucionales, ajustando luminosidad para contraste en fondo oscuro. */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --ground: #0B1A22;
+        --surface: #11232C;
+        --surface-sunk: #16303A;
+        --surface-raised: #16303A;
+
+        --ink: #E7F0F3;
+        --ink-muted: #9FB4BE;
+        --ink-faint: #6D8590;
+
+        --rule: #1E3540;
+        --rule-strong: #2C4855;
+
+        --accent: #5FA8C2;
+        --accent-strong: #82C0D6;
+        --accent-soft: #163541;
+
+        --ok: #63C293;
+        --ok-soft: #163427;
+        --warn: #E2B15C;
+        --warn-soft: #3A2C13;
+        --critical: #E38686;
+        --critical-soft: #3B1D1D;
+
+        --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 28px -14px rgba(0, 0, 0, .55);
+    }
+}
+
+:root[data-theme="dark"] {
+    --ground: #0B1A22;
+    --surface: #11232C;
+    --surface-sunk: #16303A;
+    --surface-raised: #16303A;
+
+    --ink: #E7F0F3;
+    --ink-muted: #9FB4BE;
+    --ink-faint: #6D8590;
+
+    --rule: #1E3540;
+    --rule-strong: #2C4855;
+
+    --accent: #5FA8C2;
+    --accent-strong: #82C0D6;
+    --accent-soft: #163541;
+
+    --ok: #63C293;
+    --ok-soft: #163427;
+    --warn: #E2B15C;
+    --warn-soft: #3A2C13;
+    --critical: #E38686;
+    --critical-soft: #3B1D1D;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 28px -14px rgba(0, 0, 0, .55);
+}

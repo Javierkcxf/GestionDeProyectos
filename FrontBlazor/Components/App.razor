@@ -4,17 +4,29 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
     <base href="/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Expanded:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
+    <link rel="stylesheet" href="@($"design-tokens.css?v={AppVersion}")" />
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
-    <link rel="stylesheet" href="app.css" />
-    <link rel="stylesheet" href="FrontendBlazorApi.styles.css" />
+    <link rel="stylesheet" href="@($"app.css?v={AppVersion}")" />
+    <link rel="stylesheet" href="@($"FrontendBlazorApi.styles.css?v={AppVersion}")" />
     <link rel="icon" type="image/png" href="favicon.png" />
-    <HeadOutlet />
+    <HeadOutlet @rendermode="InteractiveServer" />
 </head>
 
 <body>
-    <Routes />
+    <Routes @rendermode="InteractiveServer" />
     <script src="_framework/blazor.web.js"></script>
 </body>
 
 </html>
+
+@code {
+    // Fija en el arranque del proceso: obliga a los navegadores a pedir la
+    // hoja de estilos de nuevo tras cada reinicio/despliegue, sin invalidar
+    // la caché entre peticiones normales mientras el proceso sigue vivo.
+    private static readonly long AppVersion = DateTime.UtcNow.Ticks;
+}

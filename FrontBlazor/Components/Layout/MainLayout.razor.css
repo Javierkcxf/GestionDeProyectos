@@ -5,18 +5,15 @@
     background-color: transparent;
 }
 
+.topbar-logo {
+    height: 28px;
+    width: auto;
+    display: block;
+}
+
 main {
     flex: 1;
 }
-
-body {
-    background-image: url(/wwwroot/img/fondo2.png); /* Ajusta la ruta si es necesario */
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    background-position: center center;
-}
-
 
 .content {
     
@@ -26,10 +23,9 @@ body {
 }
 
 .sidebar {
-    background-image: linear-gradient(180deg, rgb(69, 69, 70) 0%, #1f1e3e 70%);
+    background-image: none;
+    background-color: #212529;
 }
-
-
 
 @media (max-width: 640.98px) {
     .top-row {

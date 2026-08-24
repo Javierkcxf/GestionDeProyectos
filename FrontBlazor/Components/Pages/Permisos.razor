@@ -30,7 +30,7 @@
     <div class="row g-3">
         <div class="col-md-6">
             <label class="form-label">Ruta (Página)</label>
-            <InputSelect class="form-control" @bind-Value="permisoActual.RutaUrl">
+            <InputSelect class="form-select" @bind-Value="permisoActual.RutaUrl">
                 <option value="">-- Seleccione una ruta --</option>
                 @foreach (var ruta in rutasDisponibles)
                 {
@@ -42,7 +42,7 @@
 
         <div class="col-md-6">
             <label class="form-label">Rol</label>
-            <InputSelect class="form-control" @bind-Value="permisoActual.NombreRol">
+            <InputSelect class="form-select" @bind-Value="permisoActual.NombreRol">
                 <option value="">-- Seleccione un rol --</option>
                 @foreach (var rol in roles)
                 {
@@ -208,7 +208,7 @@ else
             {
                 roles = resultado.Resultados.Select(r => new Rol
                 {
-                    Id = Convert.ToInt32(r["id"]),
+                    Id = ObtenerInt(r, "id"),
                     Nombre = ObtenerString(r, "nombre")
                 }).ToList();
             }
@@ -306,6 +306,14 @@ else
     {
         permisoActual = new RutaRol();
         mensaje = string.Empty;
+    }
+
+    private int ObtenerInt(Dictionary<string, object> dict, string key)
+    {
+        if (!dict.TryGetValue(key, out var valor)) return 0;
+        if (valor is JsonElement elem)
+            return elem.ValueKind == JsonValueKind.Number ? elem.GetInt32() : int.Parse(elem.GetString() ?? "0");
+        return Convert.ToInt32(valor);
     }
 
     private string ObtenerString(Dictionary<string, object> dict, string key)

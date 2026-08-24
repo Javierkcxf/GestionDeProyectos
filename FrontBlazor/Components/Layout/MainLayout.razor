@@ -6,14 +6,18 @@
 @inject AuthenticationStateProvider AuthStateProvider
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+    @if (UsuarioAutenticado)
+    {
+        <div class="sidebar">
+            <NavMenu />
+        </div>
+    }
 
     <main>
         @* Barra superior con información del usuario *@
         <div class="top-bar bg-dark text-white px-4 py-2 d-flex justify-content-between align-items-center">
-            <div>
+            <div class="d-flex align-items-center">
+                <img src="img/igga-logo.png" alt="IGGA" class="topbar-logo me-3" />
                 <h5 class="mb-0">Sistema de Gestión de Proyectos</h5>
             </div>
             <div class="d-flex align-items-center">

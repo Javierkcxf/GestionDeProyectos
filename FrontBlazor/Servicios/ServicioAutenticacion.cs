@@ -216,8 +216,9 @@ namespace FrontendBlazorApi.Servicios
                 
                 Console.WriteLine($"🔍 ServicioAuth: Rutas permitidas encontradas: {rutasPermitidas?.Count ?? 0}");
                 
-                var tienePermiso = rutasPermitidas?.Any(r => 
-                    r.RutaUrl.Equals(ruta, StringComparison.OrdinalIgnoreCase)) ?? false;
+                var rutaNormalizada = ruta.TrimStart('/');
+                var tienePermiso = rutasPermitidas?.Any(r =>
+                    r.RutaUrl.TrimStart('/').Equals(rutaNormalizada, StringComparison.OrdinalIgnoreCase)) ?? false;
                     
                 Console.WriteLine($"🔍 ServicioAuth: ¿Tiene permiso para {ruta}?: {tienePermiso}");
                 return tienePermiso;

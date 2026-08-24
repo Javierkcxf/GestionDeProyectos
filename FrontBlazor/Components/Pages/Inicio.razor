@@ -9,15 +9,17 @@
 
     <div class="mosaic-grid">
         @* SECCIÓN: CONFIGURACIÓN DEL SISTEMA - Solo Administrador *@
-      
+        @if (EsAdmin)
+        {
             <NavLink class="btn custom-transparent-button" href="/usuarios">Usuarios</NavLink>
             <NavLink class="btn custom-transparent-button" href="/roles">Roles</NavLink>
             <NavLink class="btn custom-transparent-button" href="/rutas">Rutas</NavLink>
             <NavLink class="btn custom-transparent-button" href="/permisos">Permisos</NavLink>
-        
+        }
 
         @* SECCIÓN: DATOS MAESTROS - Solo Administrador *@
- 
+        @if (EsAdmin)
+        {
             <NavLink class="btn custom-transparent-button" href="/tipos-responsable">
                 <i class="oi oi-list-rich me-2"></i>Tipos Responsable
             </NavLink>
@@ -30,72 +32,97 @@
             <NavLink class="btn custom-transparent-button" href="/tipos-producto">
                 <i class="oi oi-list-rich me-2"></i>Tipos Producto
             </NavLink>
-        
+        }
 
         @* SECCIÓN: GESTIÓN OPERATIVA *@
-     
-          
-                <NavLink class="btn custom-transparent-button" href="/proyectos">
-                    <i class="oi oi-project me-2"></i>Proyectos
-                </NavLink>
-    
-                <NavLink class="btn custom-transparent-button" href="/productos">
-                    <i class="oi oi-box me-2"></i>Productos
-                </NavLink>
-    
-                <NavLink class="btn custom-transparent-button" href="/entregables">
-                    <i class="oi oi-document me-2"></i>Entregables
-                </NavLink>
-
-                <NavLink class="btn custom-transparent-button" href="/producto_entregables">
-                    <i class="oi oi-link-intact me-2"></i>Producto-Entregables
-                </NavLink>
- 
-                <NavLink class="btn custom-transparent-button" href="/actividades">
-                    <i class="oi oi-task me-2"></i>Actividades
-                </NavLink>
-     
-                <NavLink class="btn custom-transparent-button" href="/archivos">
-                    <i class="oi oi-folder me-2"></i>Archivos
-                </NavLink>
-      
-                <NavLink class="btn custom-transparent-button" href="/responsables">
-                    <i class="oi oi-people me-2"></i>Responsables
-                </NavLink>
-            
+        @if (PuedeVerProyectos)
+        {
+            <NavLink class="btn custom-transparent-button" href="/proyectos">
+                <i class="oi oi-project me-2"></i>Proyectos
+            </NavLink>
+        }
+        @if (PuedeVerProductos)
+        {
+            <NavLink class="btn custom-transparent-button" href="/productos">
+                <i class="oi oi-box me-2"></i>Productos
+            </NavLink>
+        }
+        @if (PuedeVerEntregables)
+        {
+            <NavLink class="btn custom-transparent-button" href="/entregables">
+                <i class="oi oi-document me-2"></i>Entregables
+            </NavLink>
+        }
+        @if (PuedeVerProductoEntregables)
+        {
+            <NavLink class="btn custom-transparent-button" href="/producto_entregables">
+                <i class="oi oi-link-intact me-2"></i>Producto-Entregables
+            </NavLink>
+        }
+        @if (PuedeVerActividades)
+        {
+            <NavLink class="btn custom-transparent-button" href="/actividades">
+                <i class="oi oi-task me-2"></i>Actividades
+            </NavLink>
+        }
+        @if (PuedeVerArchivos)
+        {
+            <NavLink class="btn custom-transparent-button" href="/archivos">
+                <i class="oi oi-folder me-2"></i>Archivos
+            </NavLink>
+        }
+        @if (PuedeVerResponsables)
+        {
+            <NavLink class="btn custom-transparent-button" href="/responsables">
+                <i class="oi oi-people me-2"></i>Responsables
+            </NavLink>
+        }
 
         @* SECCIÓN: GESTIÓN FINANCIERA *@
-       
+        @if (PuedeVerPresupuestos)
+        {
             <NavLink class="btn custom-transparent-button" href="/presupuestos">
                 <i class="oi oi-dollar me-2"></i>Presupuestos
             </NavLink>
-
-        
-                <NavLink class="btn custom-transparent-button" href="/distribuciones_presupuesto">
-                    <i class="oi oi-split me-2"></i>Distribuciones
-                </NavLink>
-      
-                <NavLink class="btn custom-transparent-button" href="/ejecuciones_presupuesto">
-                    <i class="oi oi-play-circle me-2"></i>Ejecuciones
-                </NavLink>
-            
+        }
+        @if (PuedeVerDistribuciones)
+        {
+            <NavLink class="btn custom-transparent-button" href="/distribuciones_presupuesto">
+                <i class="oi oi-split me-2"></i>Distribuciones
+            </NavLink>
+        }
+        @if (PuedeVerEjecuciones)
+        {
+            <NavLink class="btn custom-transparent-button" href="/ejecuciones_presupuesto">
+                <i class="oi oi-play-circle me-2"></i>Ejecuciones
+            </NavLink>
+        }
 
         @* SECCIÓN: ESTRATÉGICO *@
-   
-                <NavLink class="btn custom-transparent-button" href="/variables-estrategicas">
-                    <i class="oi oi-target me-2"></i>Variables Estratégicas
-                </NavLink>
-                <NavLink class="btn custom-transparent-button" href="/objetivos_estrategico">
-                    <i class="oi oi-bullseye me-2"></i>Objetivos Estratégicos
-                </NavLink>
-                <NavLink class="btn custom-transparent-button" href="/metas_estrategicas">
-                    <i class="oi oi-flag me-2"></i>Metas Estratégicas
-                </NavLink>
-
-                <NavLink class="btn custom-transparent-button" href="/metas_proyecto">
-                    <i class="oi oi-flag me-2"></i>Metas de Proyecto
-                </NavLink>
-            
+        @if (PuedeVerVariablesEstrategicas)
+        {
+            <NavLink class="btn custom-transparent-button" href="/variables-estrategicas">
+                <i class="oi oi-target me-2"></i>Variables Estratégicas
+            </NavLink>
+        }
+        @if (PuedeVerObjetivosEstrategicos)
+        {
+            <NavLink class="btn custom-transparent-button" href="/objetivos_estrategico">
+                <i class="oi oi-bullseye me-2"></i>Objetivos Estratégicos
+            </NavLink>
+        }
+        @if (PuedeVerMetasEstrategicas)
+        {
+            <NavLink class="btn custom-transparent-button" href="/metas_estrategicas">
+                <i class="oi oi-flag me-2"></i>Metas Estratégicas
+            </NavLink>
+        }
+        @if (PuedeVerMetasProyecto)
+        {
+            <NavLink class="btn custom-transparent-button" href="/metas_proyecto">
+                <i class="oi oi-flag me-2"></i>Metas de Proyecto
+            </NavLink>
+        }
     </div>
 </div>
 <style>
@@ -103,10 +130,7 @@
 
     .home-background {
         min-height: 100vh;
-        background: linear-gradient(135deg, rgba(45, 45, 45, 0.85) 0%, rgba(26, 26, 26, 0.95) 100%), url('/img/fondo2.png');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
+        background: #262626;
         padding: 40px 20px;
         color: #e0e0e0;
     }
@@ -259,9 +283,12 @@
             PuedeVerArchivos = await TienePermisoAsync("archivos");
             PuedeVerResponsables = await TienePermisoAsync("responsables");
             PuedeVerPresupuestos = await TienePermisoAsync("presupuestos");
-            PuedeVerDistribuciones = await TienePermisoAsync("distribucionespresupuesto");
-            PuedeVerEjecuciones = await TienePermisoAsync("ejecucionespresupuesto");
-            PuedeVerMetasProyecto = await TienePermisoAsync("metasproyecto");
+            // Las claves deben coincidir con lo que hay realmente en la tabla `ruta`
+            // (distribuciones-presupuesto/ejecuciones-presupuesto usan guion en la BD,
+            // no guion bajo ni la forma pegada que tenía este archivo antes).
+            PuedeVerDistribuciones = await TienePermisoAsync("distribuciones-presupuesto");
+            PuedeVerEjecuciones = await TienePermisoAsync("ejecuciones-presupuesto");
+            PuedeVerMetasProyecto = await TienePermisoAsync("metas_proyecto");
 
             // Los administradores pueden ver todo lo estratégico
             if (EsAdmin)

@@ -6,7 +6,9 @@
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">Sistema de Gestión</a>
+        <a class="navbar-brand" href="">
+            <img src="img/igga-logo.png" alt="IGGA" class="brand-logo" />
+        </a>
         <button title="Toggle navigation" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -15,11 +17,11 @@
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="flex-column">
-        @* Enlace a la página Home (Index) - Visible para todos los usuarios autenticados *@
+        @* Enlace al dashboard (Inicio.razor) - Visible para todos los usuarios autenticados *@
         @if (MostrarInicio)
         {
             <div class="nav-item px-3">
-                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <NavLink class="nav-link" href="inicio">
                     <span class="oi oi-home" aria-hidden="true"></span> Inicio
                 </NavLink>
             </div>
@@ -57,7 +59,8 @@
         }
 
         @* SECCIÓN: DATOS MAESTROS - Solo Administrador *@
-    
+        @if (EsAdmin)
+        {
             <div class="nav-item px-3 mt-3">
                 <div class="nav-link text-muted small fw-bold text-uppercase">
                     <i class="oi oi-database me-2"></i>Datos Maestros
@@ -84,7 +87,7 @@
                     <span class="oi oi-list-rich" aria-hidden="true"></span> Tipos Producto
                 </NavLink>
             </div>
-    
+        }
 
         @* SECCIÓN: GESTIÓN OPERATIVA *@
         @if (PuedeVerGestionOperativa)
@@ -347,6 +350,7 @@
             Console.WriteLine($"Error al cerrar sesión: {ex.Message}");
         }
     }
+
 
     // Método auxiliar para verificar permisos de ruta
     private async Task<bool> TienePermisoAsync(string ruta)

@@ -17,7 +17,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+        background: #262626;
         position: relative;
         overflow: hidden;
     }
@@ -82,13 +82,15 @@
         }
     }
 
-    .login-image-icon {
-        font-size: 120px;
+    .login-logo {
+        width: 220px;
+        max-width: 60%;
+        height: auto;
         margin-bottom: 30px;
         animation: float 3s ease-in-out infinite;
         position: relative;
         z-index: 1;
-        color: #e0e0e0;
+        filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.35));
     }
 
     @@keyframes float {
@@ -102,12 +104,13 @@
     }
 
     .login-image-text h2 {
-        font-size: 2.2rem;
-        font-weight: 700;
+        font-size: 1.15rem;
+        font-weight: 600;
+        letter-spacing: .01em;
         margin-bottom: 15px;
         position: relative;
         z-index: 1;
-        color: #e0e0e0;
+        color: #b8c4c9;
     }
 
     .login-form-section {
@@ -222,12 +225,12 @@
             padding: 40px 30px;
         }
 
-        .login-image-icon {
-            font-size: 80px;
+        .login-logo {
+            width: 150px;
         }
 
         .login-image-text h2 {
-            font-size: 1.8rem;
+            font-size: 1rem;
         }
     }
 
@@ -299,9 +302,7 @@
     <div class="login-card">
         <!-- Sección de imagen/ilustración izquierda -->
         <div class="login-image-section">
-            <div class="login-image-icon">
-                <i class="bi bi-shield-lock-fill"></i>
-            </div>
+            <img src="img/igga-logo.png" alt="IGGA" class="login-logo" />
             <div class="login-image-text text-center">
                 <h2>Sistema de Gestión de Proyectos</h2>
             </div>

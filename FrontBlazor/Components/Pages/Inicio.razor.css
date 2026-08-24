@@ -2,7 +2,7 @@
 
 .home-background {
     min-height: 100vh;
-    background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+    background: #262626;
     padding: 40px 20px;
     color: #e0e0e0;
 }
