@@ -1,6 +1,7 @@
 
 using System;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -136,6 +137,13 @@ app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "webapicsharp v1");
     c.RoutePrefix = "swagger";
+});
+// Detrás de un proxy que termina TLS (Render, Azure App Service, etc.), la petición
+// le llega al contenedor como HTTP plano; sin esto, UseHttpsRedirection() entra en
+// un bucle infinito de redirecciones porque nunca ve la petición como HTTPS.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 app.UseHttpsRedirection();
 app.UseCors("PermitirTodo");

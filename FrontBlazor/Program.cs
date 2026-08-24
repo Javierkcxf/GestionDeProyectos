@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,6 +65,13 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Detrás de un proxy que termina TLS (Render, Azure App Service, etc.), la petición
+// le llega al contenedor como HTTP plano; sin esto, UseHttpsRedirection() entra en
+// un bucle infinito de redirecciones porque nunca ve la petición como HTTPS.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
