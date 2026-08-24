@@ -10,7 +10,7 @@
 @inherits PaginaAutenticada
 @inject ServicioApiGenerico servicioApi
 @inject IJSRuntime JS
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Tipos de Proyecto</PageTitle>
 
@@ -110,14 +110,22 @@ else
     private int idBusqueda; // 🔍 ID para búsqueda
     private const string urlBaseApi = "api/tipoproyecto";
 
-    protected override async Task OnInitializedAsync() => await CargarTipos();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CargarTipos();
+            StateHasChanged();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
 
     private async Task CargarTipos()
     {
         try
         {
             cargando = true;
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<TipoProyecto>>>(urlBaseApi);
             listaTipos = respuesta?.Datos ?? new();
             mensaje = $"Se cargaron {listaTipos.Count} tipo(s) de proyecto.";
@@ -193,7 +201,7 @@ else
         try
         {
             tipoActual.Id = 0;
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, tipoActual);
 
             if (respuesta.IsSuccessStatusCode)
@@ -228,7 +236,7 @@ else
 
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var ruta = $"{urlBaseApi}/Id/{tipoActual.Id}";
             var tipoParaActualizar = new { tipoActual.Nombre, tipoActual.Descripcion };
 
@@ -264,7 +272,7 @@ else
 
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var ruta = $"{urlBaseApi}/Id/{tipoActual.Id}?tabla=tipo_proyecto&esquema=dbo";
             var respuesta = await cliente.DeleteAsync(ruta);
 
@@ -293,7 +301,7 @@ else
         LimpiarMensajes();
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetAsync(urlBaseApi);
             mensaje = respuesta.IsSuccessStatusCode
                 ? "Conexión con la API verificada."

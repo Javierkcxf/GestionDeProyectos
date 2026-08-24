@@ -4,7 +4,9 @@
 @using FrontendBlazorApi.Models
 @using System.Text.Json
 @inject IHttpClientFactory fabricaHttp
-@rendermode InteractiveServer
+@using FrontendBlazorApi.Servicios
+@inject ServicioApiGenerico servicioApi
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Responsables</PageTitle>
 
@@ -135,17 +137,22 @@
         private const string urlTipoResponsable = "api/tiporesponsable";
         private const string urlUsuario = "api/usuario";
 
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            await CargarResponsables();
-            await CargarUsuarios();
-            await CargarTipoResponsables();
+            if (firstRender)
+            {
+                await CargarResponsables();
+                await CargarUsuarios();
+                await CargarTipoResponsables();
+                StateHasChanged();
+            }
+            await base.OnAfterRenderAsync(firstRender);
         }
         private async Task CargarUsuarios()
         {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlUsuario);
             
             listaUsuarios = respuesta?.Datos?.Select(d => new Usuario
@@ -162,7 +169,7 @@
         {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlTipoResponsable);
             
             listaTipoResponsables = respuesta?.Datos?.Select(d => new TipoResponsable
@@ -179,7 +186,7 @@
             try
             {
                 cargando = true;
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Responsable>>>(urlBaseApi);
                 listaResponsables = respuesta?.Datos ?? new List<Responsable>();
                 mensaje = $"Se cargaron {listaResponsables.Count} Responsable(s).";
@@ -223,7 +230,7 @@
                     parametros = new { Id = idBusqueda }
                 };
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuestaHttp = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
 
                 if (respuestaHttp.IsSuccessStatusCode)
@@ -284,7 +291,7 @@
             {
                 ResponsableActual.Id = 0;
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, ResponsableActual);
 
                 if (respuesta.IsSuccessStatusCode)
@@ -321,7 +328,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
                 string nombreClave = "Id";
                 string valorClave = ResponsableActual.Id.ToString();
@@ -372,7 +379,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
                 string tabla = "Responsable";
                 string nombreClave = "Id";
@@ -415,7 +422,7 @@
             LimpiarMensajes();
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 
                 // Mostrar mensaje de prueba
                 mensaje = "Probando conectividad...";

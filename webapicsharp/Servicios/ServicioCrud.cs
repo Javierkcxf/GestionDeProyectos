@@ -1,6 +1,8 @@
 
 using System;                                             // Para ArgumentException y ArgumentNullException
 using System.Collections.Generic;                        // Para List<> y Dictionary<>
+using System.Linq;                                        // Para Any() sobre datos.Keys
+using System.Text.RegularExpressions;                     // Para validar identificadores SQL
 using System.Threading.Tasks;                            // Para async/await
 using webapicsharp.Servicios.Abstracciones;             // Para IServicioCrud e IPoliticaTablasProhibidas
 using webapicsharp.Repositorios.Abstracciones;          // Para IRepositorioLecturaTabla
@@ -8,6 +10,25 @@ namespace webapicsharp.Servicios
 {
     public class ServicioCrud : IServicioCrud
     {
+        // Los repositorios (SQL Server, Postgres, MySQL/MariaDB) interpolan nombreTabla,
+        // esquema y nombres de columna directamente en el SQL (entre [ ] o ` `). Esas
+        // comillas de identificador NO evitan inyección: un valor que contenga el propio
+        // carácter de cierre rompe el identificador e inyecta SQL arbitrario. Como los tres
+        // repositorios comparten este patrón, se valida aquí una sola vez, antes de que
+        // cualquier nombre llegue a un repositorio.
+        private static readonly Regex PatronIdentificadorValido = new(
+            @"^[A-Za-z_][A-Za-z0-9_]*$",
+            RegexOptions.Compiled
+        );
+        private static void ValidarIdentificador(string valor, string nombreParametro)
+        {
+            if (!PatronIdentificadorValido.IsMatch(valor))
+                throw new ArgumentException(
+                    $"'{valor}' no es un identificador SQL válido para '{nombreParametro}'. " +
+                    "Solo se permiten letras, dígitos y guion bajo, sin empezar por dígito.",
+                    nombreParametro
+                );
+        }
         private readonly IRepositorioLecturaTabla _repositorioLectura;
         private readonly IPoliticaTablasProhibidas _politicaTablasProhibidas;
         public ServicioCrud(
@@ -36,6 +57,9 @@ namespace webapicsharp.Servicios
                     "El nombre de la tabla no puede estar vacío.",
                     nameof(nombreTabla)
                 );
+            ValidarIdentificador(nombreTabla, nameof(nombreTabla));
+            if (!string.IsNullOrWhiteSpace(esquema))
+                ValidarIdentificador(esquema.Trim(), nameof(esquema));
             if (!_politicaTablasProhibidas.EsTablaPermitida(nombreTabla))
             {
                 throw new UnauthorizedAccessException(
@@ -61,6 +85,10 @@ namespace webapicsharp.Servicios
                 throw new ArgumentException("El nombre de la clave no puede estar vacío.", nameof(nombreClave));
             if (string.IsNullOrWhiteSpace(valor))
                 throw new ArgumentException("El valor no puede estar vacío.", nameof(valor));
+            ValidarIdentificador(nombreTabla, nameof(nombreTabla));
+            if (!string.IsNullOrWhiteSpace(esquema))
+                ValidarIdentificador(esquema.Trim(), nameof(esquema));
+            ValidarIdentificador(nombreClave.Trim(), nameof(nombreClave));
             if (!_politicaTablasProhibidas.EsTablaPermitida(nombreTabla))
                 throw new UnauthorizedAccessException(
                     $"Acceso denegado: La tabla '{nombreTabla}' está restringida y no puede ser consultada."
@@ -87,6 +115,11 @@ namespace webapicsharp.Servicios
                 throw new ArgumentException("El nombre de la tabla no puede estar vacío.", nameof(nombreTabla));
             if (datos == null || !datos.Any())
                 throw new ArgumentException("Los datos no pueden estar vacíos.", nameof(datos));
+            ValidarIdentificador(nombreTabla, nameof(nombreTabla));
+            if (!string.IsNullOrWhiteSpace(esquema))
+                ValidarIdentificador(esquema.Trim(), nameof(esquema));
+            foreach (var nombreColumna in datos.Keys)
+                ValidarIdentificador(nombreColumna, nameof(datos));
             if (!_politicaTablasProhibidas.EsTablaPermitida(nombreTabla))
                 throw new UnauthorizedAccessException(
                     $"Acceso denegado: La tabla '{nombreTabla}' está restringida y no puede ser modificada."
@@ -117,6 +150,12 @@ namespace webapicsharp.Servicios
                 throw new ArgumentException("El valor de la clave no puede estar vacío.", nameof(valorClave));
             if (datos == null || !datos.Any())
                 throw new ArgumentException("Los datos a actualizar no pueden estar vacíos.", nameof(datos));
+            ValidarIdentificador(nombreTabla, nameof(nombreTabla));
+            if (!string.IsNullOrWhiteSpace(esquema))
+                ValidarIdentificador(esquema.Trim(), nameof(esquema));
+            ValidarIdentificador(nombreClave.Trim(), nameof(nombreClave));
+            foreach (var nombreColumna in datos.Keys)
+                ValidarIdentificador(nombreColumna, nameof(datos));
             if (!_politicaTablasProhibidas.EsTablaPermitida(nombreTabla))
                 throw new UnauthorizedAccessException(
                     $"Acceso denegado: La tabla '{nombreTabla}' está restringida y no puede ser modificada."
@@ -147,6 +186,10 @@ namespace webapicsharp.Servicios
                 throw new ArgumentException("El nombre de la clave no puede estar vacío.", nameof(nombreClave));
             if (string.IsNullOrWhiteSpace(valorClave))
                 throw new ArgumentException("El valor de la clave no puede estar vacío.", nameof(valorClave));
+            ValidarIdentificador(nombreTabla, nameof(nombreTabla));
+            if (!string.IsNullOrWhiteSpace(esquema))
+                ValidarIdentificador(esquema.Trim(), nameof(esquema));
+            ValidarIdentificador(nombreClave.Trim(), nameof(nombreClave));
             if (!_politicaTablasProhibidas.EsTablaPermitida(nombreTabla))
                 throw new UnauthorizedAccessException(
                     $"Acceso denegado: La tabla '{nombreTabla}' está restringida y no puede ser modificada."
@@ -180,6 +223,11 @@ namespace webapicsharp.Servicios
                 throw new ArgumentException("El valor de usuario no puede estar vacío.", nameof(valorUsuario));
             if (string.IsNullOrWhiteSpace(valorContrasena))
                 throw new ArgumentException("La contraseña no puede estar vacía.", nameof(valorContrasena));
+            ValidarIdentificador(nombreTabla, nameof(nombreTabla));
+            if (!string.IsNullOrWhiteSpace(esquema))
+                ValidarIdentificador(esquema.Trim(), nameof(esquema));
+            ValidarIdentificador(campoUsuario.Trim(), nameof(campoUsuario));
+            ValidarIdentificador(campoContrasena.Trim(), nameof(campoContrasena));
             if (!_politicaTablasProhibidas.EsTablaPermitida(nombreTabla))
                 throw new UnauthorizedAccessException(
                     $"Acceso denegado: La tabla '{nombreTabla}' está restringida y no puede ser consultada."

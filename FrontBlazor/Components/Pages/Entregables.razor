@@ -4,8 +4,10 @@
 @using System.Text.Json
 @using FrontendBlazorApi.Models
 @inject IHttpClientFactory fabricaHttp
+@using FrontendBlazorApi.Servicios
+@inject ServicioApiGenerico servicioApi
 @inject IJSRuntime js
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Entregables</PageTitle>
 
@@ -277,28 +279,31 @@ else
     private const string urlArchivo = "api/archivo";
     private const string urlArchivoEntregable = "api/archivo_entregable";
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await CargarEntregables();
-        await CargarResponsables();
-        await CargarResponsablesEntregables();
-        await CargarArchivosDisponibles();
-        await CargarArchivosEntregables();
-        await CargarProductos();
-
-
+        if (firstRender)
+        {
+            await CargarEntregables();
+            await CargarResponsables();
+            await CargarResponsablesEntregables();
+            await CargarArchivosDisponibles();
+            await CargarArchivosEntregables();
+            await CargarProductos();
+            StateHasChanged();
+        }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
       private async Task CargarProductos()
     {
-        var cliente = fabricaHttp.CreateClient("Api");
+        var cliente = await servicioApi.CrearClienteApiConTokenAsync();
         var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Producto>>>(urlProducto);
         listaProductos = respuesta?.Datos ?? new List<Producto>();
     }
 
     private async Task CargarProductosEntregables()
     {
-        var cliente = fabricaHttp.CreateClient("Api");
+        var cliente = await servicioApi.CrearClienteApiConTokenAsync();
         var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Producto_Entregable>>>(urlProducto_Entregable);
         listaProducto_Entregables = respuesta?.Datos ?? new List<Producto_Entregable>();
 
@@ -312,7 +317,7 @@ else
     {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Archivo_Entregable>>>(urlArchivoEntregable);
             listaArchivoEntregables = respuesta?.Datos ?? new List<Archivo_Entregable>();
         }
@@ -327,7 +332,7 @@ else
     {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Archivo>>>(urlArchivo);
             listaArchivos = respuesta?.Datos ?? new List<Archivo>();
         }
@@ -342,7 +347,7 @@ else
     {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Responsable_Entregable>>>(urlResponsableEntregable);
             listaResponsableEntregables = respuesta?.Datos ?? new List<Responsable_Entregable>();
         }
@@ -357,7 +362,7 @@ else
     {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlResponsable);
 
             listaResponsables = respuesta?.Datos?.Select(d => new Responsable
@@ -380,7 +385,7 @@ else
         try
         {
             cargando = true;
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Entregable>>>(urlBaseApi);
             listaEntregables = respuesta?.Datos ?? new List<Entregable>();
             mensaje = $"Se cargaron {listaEntregables.Count} entregable(s).";
@@ -413,7 +418,7 @@ else
         try
         {
             cargando = true;
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Entregable>>>(urlBaseApi);
 
             if (respuesta?.Datos != null && respuesta.Datos.Count > 0)
@@ -472,7 +477,7 @@ else
         {
             entregableActual.Id = 0;
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, entregableActual);
 
             if (respuesta.IsSuccessStatusCode)
@@ -494,7 +499,7 @@ else
                 {
                     if (creado != null && responsableSeleccionadoId > 0)
                     {
-                        var cliente2 = fabricaHttp.CreateClient("Api");
+                        var cliente2 = await servicioApi.CrearClienteApiConTokenAsync();
                         var nuevoResponsableEntregable = new Responsable_Entregable
                         {
                             IdEntregable = creado.Id,
@@ -519,7 +524,7 @@ else
                     {
                         try
                         {
-                            var cliente3 = fabricaHttp.CreateClient("Api");
+                            var cliente3 = await servicioApi.CrearClienteApiConTokenAsync();
                             var nuevaRelacion = new Archivo_Entregable
                             {
                                 IdArchivo = archivoSeleccionadoId,
@@ -597,7 +602,7 @@ else
 
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
             string nombreClave = "Id";
             string valorClave = entregableActual.Id.ToString();
@@ -626,7 +631,7 @@ else
                 {
                     try
                     {
-                        var clienteArchivo = fabricaHttp.CreateClient("Api");
+                        var clienteArchivo = await servicioApi.CrearClienteApiConTokenAsync();
 
                         // Verificar si ya existe una relación entre este entregable y un archivo
                         var relacionExistente = listaArchivoEntregables
@@ -709,7 +714,7 @@ else
 
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
             string tabla = "entregable";
             string nombreClave = "Id";
@@ -755,7 +760,7 @@ else
         LimpiarMensajes();
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetAsync(urlBaseApi);
 
             if (respuesta.IsSuccessStatusCode)
@@ -853,7 +858,7 @@ else
         {
             responsableEntregableActual.IdEntregable = entregableActual.Id;
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlResponsableEntregable, responsableEntregableActual);
 
             if (respuesta.IsSuccessStatusCode)
@@ -911,7 +916,7 @@ else
 
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
             string tabla = "responsable_entregable";
             string esquema = "dbo";

@@ -3,7 +3,9 @@
 @using FrontendBlazorApi.Models
 @using System.Text.Json
 @inject IHttpClientFactory fabricaHttp
-@rendermode InteractiveServer
+@using FrontendBlazorApi.Servicios
+@inject ServicioApiGenerico servicioApi
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Actividades</PageTitle>
 
@@ -132,8 +134,8 @@ else
                         <td>@a.Descripcion</td>
                         <td data-date>@a.FechaInicio.ToString("yyyy-MM-dd")</td>
                         <td data-date>@a.FechaFinPrevista.ToString("yyyy-MM-dd")</td>
-                        <td data-date>@a.FechaModificacion.ToString("yyyy-MM-dd")</td>
-                        <td data-date>@a.FechaFinalizacion.ToString("yyyy-MM-dd")</td>
+                        <td data-date>@(a.FechaModificacion?.ToString("yyyy-MM-dd"))</td>
+                        <td data-date>@(a.FechaFinalizacion?.ToString("yyyy-MM-dd"))</td>
                         <td>@a.Prioridad</td>
                         <td>@a.PorcentajeAvance</td>
                         <td>
@@ -163,17 +165,22 @@ else
     private const string urlProcedimientos = "api/procedimientos/ejecutarsp";
     private const string urlEntregable = "api/entregable";
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await CargarActividades();
-        await CargarEntregables();
+        if (firstRender)
+        {
+            await CargarActividades();
+            await CargarEntregables();
+            StateHasChanged();
+        }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     private async Task CargarEntregables()
     {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Entregable>>>(urlEntregable);
             listaEntregables = respuesta?.Datos ?? new();
         }
@@ -185,7 +192,7 @@ else
         try
         {
             cargando = true;
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Actividad>>>(urlBaseApi);
             listaActividades = respuesta?.Datos ?? new();
             mensaje = $"Se cargaron {listaActividades.Count} Actividad(es).";
@@ -210,7 +217,7 @@ else
                 parametros = new { Id = idBusqueda }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
 
             if (respuesta.IsSuccessStatusCode)
@@ -227,8 +234,8 @@ else
                         Descripcion = a.TryGetProperty("Descripcion", out var d) ? d.GetString() : null,
                         FechaInicio = a.GetProperty("FechaInicio").GetDateTime(),
                         FechaFinPrevista = a.GetProperty("FechaFinPrevista").GetDateTime(),
-                        FechaModificacion = a.GetProperty("FechaModificacion").GetDateTime(),
-                        FechaFinalizacion = a.GetProperty("FechaFinalizacion").GetDateTime(),
+                        FechaModificacion = a.GetProperty("FechaModificacion").ValueKind == JsonValueKind.Null ? null : a.GetProperty("FechaModificacion").GetDateTime(),
+                        FechaFinalizacion = a.GetProperty("FechaFinalizacion").ValueKind == JsonValueKind.Null ? null : a.GetProperty("FechaFinalizacion").GetDateTime(),
                         Prioridad = a.GetProperty("Prioridad").GetInt32(),
                         PorcentajeAvance = a.GetProperty("PorcentajeAvance").GetInt32()
                     };
@@ -279,7 +286,7 @@ else
                 { "@PorcentajeAvance", actividadActual.PorcentajeAvance }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlProcedimientos, parametros);
 
             if (respuesta.IsSuccessStatusCode)
@@ -329,7 +336,7 @@ else
                 { "@PorcentajeAvance", actividadActual.PorcentajeAvance }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlProcedimientos, parametros);
 
             if (respuesta.IsSuccessStatusCode)
@@ -370,7 +377,7 @@ else
                 { "@Id", actividadActual.Id }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlProcedimientos, parametros);
 
             if (respuesta.IsSuccessStatusCode)
@@ -398,7 +405,7 @@ else
     {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetAsync(urlBaseApi);
             if (respuesta.IsSuccessStatusCode)
             {

@@ -4,7 +4,9 @@
 @using FrontendBlazorApi.Models
 @using System.Text.Json
 @inject IHttpClientFactory fabricaHttp
-@rendermode InteractiveServer
+@using FrontendBlazorApi.Servicios
+@inject ServicioApiGenerico servicioApi
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Archivos</PageTitle>
 
@@ -138,10 +140,15 @@
         private const string urlConsultas = "api/consultas/ejecutarconsultaparametrizada";
         private const string urlUsuario = "api/usuario";
 
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            await CargarArchivos();
-            await CargarUsuarios();
+            if (firstRender)
+            {
+                await CargarArchivos();
+                await CargarUsuarios();
+                StateHasChanged();
+            }
+            await base.OnAfterRenderAsync(firstRender);
         }
         
         private async Task CargarArchivo(InputFileChangeEventArgs e)
@@ -159,7 +166,7 @@
                 // Validar tipo (opcional)
                 // if (!archivo.ContentType.StartsWith("image/") ) { ... }
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 using var contenido = new MultipartFormDataContent();
                 using var stream = archivo.OpenReadStream(maxAllowedSize: 50_000_000); // 50 MB
                 contenido.Add(new StreamContent(stream), "file", archivo.Name);
@@ -192,7 +199,7 @@
         {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlUsuario);
             
             listaUsuarios = respuesta?.Datos?.Select(d => new Usuario
@@ -210,7 +217,7 @@
             try
             {
                 cargando = true;
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Archivo>>>(urlBaseApi);
                 listaArchivos = respuesta?.Datos ?? new List<Archivo>();
                 mensaje = $"Se cargaron {listaArchivos.Count} Archivo(s).";
@@ -254,7 +261,7 @@
                     parametros = new { Id = idBusqueda }
                 };
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuestaHttp = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
 
                 if (respuestaHttp.IsSuccessStatusCode)
@@ -317,7 +324,7 @@
             {
                 ArchivoActual.Id = 0;
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, ArchivoActual);
 
                 if (respuesta.IsSuccessStatusCode)
@@ -354,7 +361,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
                 string nombreClave = "Id";
                 string valorClave = ArchivoActual.Id.ToString();
@@ -407,7 +414,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
                 string tabla = "Archivo";
                 string nombreClave = "Id";
@@ -450,7 +457,7 @@
             LimpiarMensajes();
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 
                 // Mostrar mensaje de prueba
                 mensaje = "Probando conectividad...";

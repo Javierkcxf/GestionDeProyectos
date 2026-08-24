@@ -165,8 +165,8 @@ namespace FrontendBlazorApi.Models
         public string? Descripcion { get; set; }
         public DateTime FechaInicio { get; set; }
         public DateTime FechaFinPrevista { get; set; }
-        public DateTime FechaModificacion { get; set; }
-        public DateTime FechaFinalizacion { get; set; }
+        public DateTime? FechaModificacion { get; set; }
+        public DateTime? FechaFinalizacion { get; set; }
         public int Prioridad { get; set; }
         [Range(0, 100)]
         public int PorcentajeAvance { get; set; }

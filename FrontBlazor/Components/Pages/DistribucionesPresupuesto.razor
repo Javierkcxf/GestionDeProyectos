@@ -4,7 +4,9 @@
 @using FrontendBlazorApi.Models
 @using System.Text.Json
 @inject IHttpClientFactory fabricaHttp
-@rendermode InteractiveServer
+@using FrontendBlazorApi.Servicios
+@inject ServicioApiGenerico servicioApi
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Distribuciones de Presupuesto</PageTitle>
 
@@ -134,11 +136,16 @@ else
 
     private int idBusqueda;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await CargarDistribuciones();
-        await CargarProyectos();
-        await CargarPresupuestos();
+        if (firstRender)
+        {
+            await CargarDistribuciones();
+            await CargarProyectos();
+            await CargarPresupuestos();
+            StateHasChanged();
+        }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     private async Task CargarDistribuciones()
@@ -146,7 +153,7 @@ else
         try
         {
             cargando = true;
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<DistribucionPresupuesto>>>(urlBaseApi);
             listaDistribuciones = respuesta?.Datos ?? new();
             mensaje = $"Se cargaron {listaDistribuciones.Count} distribución(es).";
@@ -167,7 +174,7 @@ else
     {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Proyecto>>>(urlProyecto);
             listaProyectos = respuesta?.Datos ?? new();
         }
@@ -178,7 +185,7 @@ else
     {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Presupuesto>>>(urlPresupuesto);
             listaPresupuestos = respuesta?.Datos ?? new();
         }
@@ -195,7 +202,7 @@ else
                 parametros = new { Id = idBusqueda }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
 
             if (respuesta.IsSuccessStatusCode)
@@ -255,7 +262,7 @@ else
                 { "@MontoAsignado", distribucionActual.MontoAsignado }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlProcedimientos, parametros);
 
             if (respuesta.IsSuccessStatusCode)
@@ -299,7 +306,7 @@ else
                 { "@MontoAsignado", distribucionActual.MontoAsignado }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlProcedimientos, parametros);
 
             if (respuesta.IsSuccessStatusCode)
@@ -340,7 +347,7 @@ else
                 { "@Id", distribucionActual.Id }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlProcedimientos, parametros);
 
             if (respuesta.IsSuccessStatusCode)
@@ -368,7 +375,7 @@ else
     {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetAsync(urlBaseApi);
 
             if (respuesta.IsSuccessStatusCode)

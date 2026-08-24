@@ -29,6 +29,26 @@ namespace FrontendBlazorApi.Servicios
             return cliente;
         }
 
+        // Igual que CrearClienteConTokenAsync, pero para el cliente nombrado "Api"
+        // (usado directamente por varias páginas de CRUD en vez de pasar por los
+        // métodos de este servicio). Se resuelve el token aquí, en un servicio scoped
+        // normal, en vez de en un DelegatingHandler registrado en el cliente "Api":
+        // IHttpClientFactory reutiliza la instancia del handler entre circuitos, así
+        // que un IJSRuntime inyectado ahí queda apuntando a un circuito ya cerrado y
+        // la interop de JS falla para siempre en ese cliente. Un servicio scoped normal
+        // sí se crea de nuevo en cada circuito.
+        public async Task<HttpClient> CrearClienteApiConTokenAsync()
+        {
+            var cliente = _fabricaHttp.CreateClient("Api");
+            var token = await _js.InvokeAsync<string>("sessionStorage.getItem", "token");
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                cliente.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+            return cliente;
+        }
+
         private async Task LanzarSiError(HttpResponseMessage respuesta)
         {
             if (respuesta.IsSuccessStatusCode)

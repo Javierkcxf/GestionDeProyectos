@@ -4,7 +4,9 @@
 @using FrontendBlazorApi.Models
 @using System.Text.Json
 @inject IHttpClientFactory fabricaHttp
-@rendermode InteractiveServer
+@using FrontendBlazorApi.Servicios
+@inject ServicioApiGenerico servicioApi
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Meta Proyecto</PageTitle>
 
@@ -119,23 +121,28 @@ else
     private const string urlMeta = "api/metaestrategica";
     private const string urlBaseApi = "api/meta_proyecto";
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await CargarProyectos();
-        await CargarMetas();
-        await CargarMetaProyectos();
+        if (firstRender)
+        {
+            await CargarProyectos();
+            await CargarMetas();
+            await CargarMetaProyectos();
+            StateHasChanged();
+        }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     private async Task CargarProyectos()
     {
-        var cliente = fabricaHttp.CreateClient("Api");
+        var cliente = await servicioApi.CrearClienteApiConTokenAsync();
         var resp = await cliente.GetFromJsonAsync<RespuestaApi<List<Proyecto>>>(urlProyecto);
         listaProyectos = resp?.Datos ?? new();
     }
 
     private async Task CargarMetas()
     {
-        var cliente = fabricaHttp.CreateClient("Api");
+        var cliente = await servicioApi.CrearClienteApiConTokenAsync();
         var resp = await cliente.GetFromJsonAsync<RespuestaApi<List<MetaEstrategica>>>(urlMeta);
         listaMetas = resp?.Datos ?? new();
     }
@@ -145,7 +152,7 @@ else
         try
         {
             cargando = true;
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var resp = await cliente.GetFromJsonAsync<RespuestaApi<List<Meta_Proyecto>>>(urlBaseApi);
             listaMetaProyectos = resp?.Datos ?? new();
             mensaje = $"Se cargaron {listaMetaProyectos.Count} MetaProyectos.";
@@ -182,7 +189,7 @@ private async Task CrearMetaProyecto()
             { "@FechaAsociacion", MetaProyectoActual.FechaAsociacion }
         };
 
-        var cliente = fabricaHttp.CreateClient("Api");
+        var cliente = await servicioApi.CrearClienteApiConTokenAsync();
         var respuesta = await cliente.PostAsJsonAsync("api/procedimientos/ejecutarsp", parametros);
 
         if (respuesta.IsSuccessStatusCode)
@@ -218,7 +225,7 @@ private async Task ActualizarMetaProyecto()
             { "@FechaAsociacion", MetaProyectoActual.FechaAsociacion }
         };
 
-        var cliente = fabricaHttp.CreateClient("Api");
+        var cliente = await servicioApi.CrearClienteApiConTokenAsync();
         var respuesta = await cliente.PostAsJsonAsync("api/procedimientos/ejecutarsp", parametros);
 
         if (respuesta.IsSuccessStatusCode)
@@ -253,7 +260,7 @@ private async Task ActualizarMetaProyecto()
                 { "@IdProyecto", MetaProyectoActual.IdProyecto }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var resp = await cliente.PostAsJsonAsync(urlProcedimientos, parametros);
 
             if (resp.IsSuccessStatusCode)
@@ -302,7 +309,7 @@ private async Task ActualizarMetaProyecto()
 
     private async Task ProbarConexion()
     {
-        var cliente = fabricaHttp.CreateClient("Api");
+        var cliente = await servicioApi.CrearClienteApiConTokenAsync();
         var resp = await cliente.GetAsync(urlBaseApi);
         if (resp.IsSuccessStatusCode)
         {

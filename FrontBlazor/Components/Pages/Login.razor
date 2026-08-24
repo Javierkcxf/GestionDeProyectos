@@ -1,5 +1,5 @@
 ﻿@page "/login"
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using FrontendBlazorApi.Servicios
 @using FrontendBlazorApi.Models
 @using System.Text.Json

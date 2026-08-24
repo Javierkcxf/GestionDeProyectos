@@ -6,7 +6,7 @@
 @inherits PaginaAutenticada
 @inject ServicioApiGenerico servicioApi
 @inject IJSRuntime JS
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Gestión de Permisos</PageTitle>
 

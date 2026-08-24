@@ -157,6 +157,7 @@ namespace webapicsharp.Controllers
                 });
             }
         }
+        [Authorize]
         [HttpGet("{nombreClave}/{valor}")]
         public async Task<IActionResult> ObtenerPorClaveAsync(
         string tabla,           // Del path: /api/{tabla}
@@ -253,7 +254,7 @@ namespace webapicsharp.Controllers
                 });
             }
         }
-        [AllowAnonymous]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> CrearAsync(
             string tabla,                                           // Del path: /api/{tabla}
@@ -369,7 +370,7 @@ namespace webapicsharp.Controllers
                 });
             }
         }
-        [AllowAnonymous]
+        [Authorize]
         [HttpPut("{nombreClave}/{valorClave}")]
         public async Task<IActionResult> ActualizarAsync(
             string tabla,                                           // Del path: /api/{tabla}
@@ -498,7 +499,7 @@ namespace webapicsharp.Controllers
                 });
             }
         }
-        [AllowAnonymous]
+        [Authorize]
         [HttpDelete("{nombreClave}/{valorClave}")]
         public async Task<IActionResult> EliminarAsync(
             string tabla,                                          // Del path: /api/{tabla}

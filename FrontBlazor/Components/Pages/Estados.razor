@@ -4,7 +4,9 @@
 @using FrontendBlazorApi.Models
 @using System.Text.Json
 @inject IHttpClientFactory fabricaHttp
-@rendermode InteractiveServer
+@using FrontendBlazorApi.Servicios
+@inject ServicioApiGenerico servicioApi
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Estados</PageTitle>
 
@@ -108,9 +110,14 @@ else
 
     private const string urlBaseApi = "api/estado";
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await CargarEstados();
+        if (firstRender)
+        {
+            await CargarEstados();
+            StateHasChanged();
+        }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     private async Task CargarEstados()
@@ -118,7 +125,7 @@ else
         try
         {
             cargando = true;
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Estado>>>(urlBaseApi);
             listaEstados = respuesta?.Datos ?? new List<Estado>();
             mensaje = $"Se cargaron {listaEstados.Count} estado(s).";
@@ -162,7 +169,7 @@ else
                 parametros = new { Id = idBusqueda }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuestaHttp = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
 
             if (respuestaHttp.IsSuccessStatusCode)
@@ -221,7 +228,7 @@ else
         {
             estadoActual.Id = 0;
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, estadoActual);
 
             if (respuesta.IsSuccessStatusCode)
@@ -258,7 +265,7 @@ else
 
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
             string nombreClave = "Id";
             string valorClave = estadoActual.Id.ToString();
@@ -307,7 +314,7 @@ else
 
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
             string tabla = "estado";
             string nombreClave = "Id";
@@ -350,7 +357,7 @@ else
         LimpiarMensajes();
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             
             // Mostrar mensaje de prueba
             mensaje = "Probando conectividad...";

@@ -10,7 +10,7 @@
 
 @inject ServicioApiGenerico servicioApi
 @inject IJSRuntime JS
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Tipos de Responsable</PageTitle>
 
@@ -115,9 +115,14 @@ else
     // === Campos para búsqueda por ID ===
     private int idBusqueda; // para capturar el ID del tipo a buscar
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await CargarTipos();
+        if (firstRender)
+        {
+            await CargarTipos();
+            StateHasChanged();
+        }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     private async Task CargarTipos()
@@ -125,7 +130,7 @@ else
         try
         {
             cargando = true;
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<TipoResponsable>>>(urlBaseApi);
             listaTipos = respuesta?.Datos ?? new List<TipoResponsable>();
             mensaje = $"Se cargaron {listaTipos.Count} tipo(s) de responsable.";
@@ -153,7 +158,7 @@ else
                 parametros = new { Id = idBusqueda }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuestaHttp = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
 
             if (respuestaHttp.IsSuccessStatusCode)
@@ -213,7 +218,7 @@ else
         {
             tipoActual.Id = 0;
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, tipoActual);
 
             if (respuesta.IsSuccessStatusCode)
@@ -250,7 +255,7 @@ else
 
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
             string nombreClave = "Id";
             string valorClave = tipoActual.Id.ToString();
@@ -299,7 +304,7 @@ else
 
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
             string tabla = "tipo_responsable";
             string nombreClave = "Id";
@@ -342,7 +347,7 @@ else
         LimpiarMensajes();
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetAsync(urlBaseApi);
 
             if (respuesta.IsSuccessStatusCode)

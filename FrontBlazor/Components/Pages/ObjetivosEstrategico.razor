@@ -4,7 +4,9 @@
 @using FrontendBlazorApi.Models
 @using System.Text.Json
 @inject IHttpClientFactory fabricaHttp
-@rendermode InteractiveServer
+@using FrontendBlazorApi.Servicios
+@inject ServicioApiGenerico servicioApi
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Objetivos Estratégicos</PageTitle>
 
@@ -128,17 +130,22 @@ else
 
     private int idBusqueda;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await CargarObjetivos();
-        await CargarVariables();
+        if (firstRender)
+        {
+            await CargarObjetivos();
+            await CargarVariables();
+            StateHasChanged();
+        }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     private async Task CargarVariables()
     {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var resp = await cliente.GetFromJsonAsync<RespuestaApi<List<VariableEstrategica>>>(urlVariable);
             listaVariables = resp?.Datos ?? new();
         }
@@ -153,7 +160,7 @@ else
         try
         {
             cargando = true;
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<ObjetivoEstrategico>>>(urlBaseApi);
             listaObjetivos = respuesta?.Datos ?? new();
             mensaje = $"Se cargaron {listaObjetivos.Count} objetivo(s).";
@@ -180,7 +187,7 @@ else
                 parametros = new { Id = idBusqueda }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
 
             if (respuesta.IsSuccessStatusCode)
@@ -241,7 +248,7 @@ else
                 { "@Descripcion", objetivoActual.Descripcion }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlProcedimientos, parametros);
 
             if (respuesta.IsSuccessStatusCode)
@@ -285,7 +292,7 @@ else
                 { "@Descripcion", objetivoActual.Descripcion }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlProcedimientos, parametros);
 
             if (respuesta.IsSuccessStatusCode)
@@ -326,7 +333,7 @@ else
                 { "@Id", objetivoActual.Id }
             };
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlProcedimientos, parametros);
 
             if (respuesta.IsSuccessStatusCode)
@@ -379,7 +386,7 @@ else
     {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetAsync(urlBaseApi);
             if (respuesta.IsSuccessStatusCode)
             {

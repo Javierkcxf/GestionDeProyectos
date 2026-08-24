@@ -4,6 +4,8 @@
 @using FrontendBlazorApi.Models
 @using System.Text.Json
 @inject IHttpClientFactory fabricaHttp
+@using FrontendBlazorApi.Servicios
+@inject ServicioApiGenerico servicioApi
 
 <PageTitle>Variables Estratégicas</PageTitle>
 
@@ -103,9 +105,14 @@ else
 
     private const string urlBaseApi = "api/variableestrategica";
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await CargarVariables();
+        if (firstRender)
+        {
+            await CargarVariables();
+            StateHasChanged();
+        }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     private async Task CargarVariables()
@@ -113,7 +120,7 @@ else
         try
         {
             cargando = true;
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<VariableEstrategica>>>(urlBaseApi);
             listaVariables = respuesta?.Datos ?? new List<VariableEstrategica>();
             mensaje = $"Se cargaron {listaVariables.Count} variable(s) estratégica(s).";
@@ -143,7 +150,7 @@ else
 
     try
     {
-        var cliente = fabricaHttp.CreateClient("Api");
+        var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
         var consulta = new
         {
@@ -208,7 +215,7 @@ else
         {
             variableActual.Id = 0;
 
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, variableActual);
 
             if (respuesta.IsSuccessStatusCode)
@@ -245,7 +252,7 @@ else
 
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
             string nombreClave = "Id";
             string valorClave = variableActual.Id.ToString();
@@ -294,7 +301,7 @@ else
 
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
             string tabla = "variable_estrategica";
             string nombreClave = "Id";
@@ -337,7 +344,7 @@ else
         LimpiarMensajes();
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetAsync(urlBaseApi);
 
             if (respuesta.IsSuccessStatusCode)

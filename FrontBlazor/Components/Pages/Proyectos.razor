@@ -4,7 +4,9 @@
 @using FrontendBlazorApi.Models
 @using System.Text.Json
 @inject IHttpClientFactory fabricaHttp
-@rendermode InteractiveServer
+@using FrontendBlazorApi.Servicios
+@inject ServicioApiGenerico servicioApi
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Proyectos</PageTitle>
 
@@ -342,13 +344,18 @@
     private const string urlEstado = "api/estado";
     private const string urlEstadoProyecto = "api/estado_proyecto";
 
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            await CargarProyectos();
-            await CargarTipoProyectos();
-            await CargarResponsables();
-            await CargarProductos();
-            await CargarEstados();
+            if (firstRender)
+            {
+                await CargarProyectos();
+                await CargarTipoProyectos();
+                await CargarResponsables();
+                await CargarProductos();
+                await CargarEstados();
+                StateHasChanged();
+            }
+            await base.OnAfterRenderAsync(firstRender);
         }
         
         // Productos y asociaciones
@@ -368,7 +375,7 @@
         {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlTipoProyecto);
             
             listaTipoProyectos = respuesta?.Datos?.Select(d => new TipoProyecto
@@ -384,7 +391,7 @@
         {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlResponsable);
             
             listaResponsables = respuesta?.Datos?.Select(d => new Responsable
@@ -402,7 +409,7 @@
             try
             {
                 cargando = true;
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Proyecto>>>(urlBaseApi);
                 listaProyectos = respuesta?.Datos ?? new List<Proyecto>();
                 mensaje = $"Se cargaron {listaProyectos.Count} Proyecto(s).";
@@ -439,7 +446,7 @@
         {
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlProducto);
 
                 listaProductos = respuesta?.Datos?.Select(d => new Producto
@@ -469,7 +476,7 @@
                     return;
                 }
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Proyecto_Producto>>>(urlProyectoProducto);
                 var todas = respuesta?.Datos ?? new List<Proyecto_Producto>();
                 listaProyectoProductos = todas.Where(x => x.IdProyecto == (ProyectoActual?.Id ?? 0)).ToList();
@@ -485,7 +492,7 @@
         {
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlEstado);
 
                 listaEstados = respuesta?.Datos?.Select(d => new Estado
@@ -508,7 +515,7 @@
                     return;
                 }
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Estado_Proyecto>>>(urlEstadoProyecto);
                 var todas = respuesta?.Datos ?? new List<Estado_Proyecto>();
                 listaEstadoProyectos = todas.Where(x => x.IdProyecto == (ProyectoActual?.Id ?? 0)).ToList();
@@ -550,7 +557,7 @@
             {
                 EstadoProyectoActual.IdProyecto = ProyectoActual.Id;
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.PostAsJsonAsync(urlEstadoProyecto, EstadoProyectoActual);
 
                 if (respuesta.IsSuccessStatusCode)
@@ -587,7 +594,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
                 var actualizar = new { IdEstado = EstadoProyectoActual.IdEstado };
                 var ruta = $"{urlEstadoProyecto}/IdProyecto/{EstadoProyectoActual.IdProyecto}";
@@ -628,7 +635,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
                 string tabla = "Estado_Proyecto";
                 string nombreClave = "IdProyecto";
@@ -718,7 +725,7 @@
             {
                 ProyectoProductoActual.IdProyecto = ProyectoActual.Id;
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.PostAsJsonAsync(urlProyectoProducto, ProyectoProductoActual);
 
                 if (respuesta.IsSuccessStatusCode)
@@ -755,7 +762,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var actualizar = new { FechaAsociacion = ProyectoProductoActual.FechaAsociacion };
 
                 var ruta = $"{urlProyectoProducto}/IdProyecto,IdProducto/{ProyectoProductoActual.IdProyecto},{ProyectoProductoActual.IdProducto}";
@@ -796,7 +803,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
                 string tabla = "Proyecto_Producto";
                 string esquema = "dbo";
@@ -867,7 +874,7 @@
                     parametros = new { Id = idBusqueda }
                 };
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuestaHttp = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
 
                 if (respuestaHttp.IsSuccessStatusCode)
@@ -934,7 +941,7 @@
             {
                 ProyectoActual.Id = 0;
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, ProyectoActual);
 
                 if (respuesta.IsSuccessStatusCode)
@@ -972,7 +979,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
                 string nombreClave = "Id";
                 string valorClave = ProyectoActual.Id.ToString();
@@ -1030,7 +1037,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
                 string tabla = "Proyecto";
                 string nombreClave = "Id";
@@ -1073,7 +1080,7 @@
             LimpiarMensajes();
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 
                 // Mostrar mensaje de prueba
                 mensaje = "Probando conectividad...";
@@ -1215,7 +1222,7 @@
             }
 
             // Crear cliente HTTP
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
             using var contenido = new MultipartFormDataContent();
             using var stream = archivo.OpenReadStream(maxAllowedSize: 10_000_000); // 10 MB máx.

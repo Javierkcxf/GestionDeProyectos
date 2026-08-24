@@ -4,7 +4,7 @@
 @using FrontendBlazorApi.Components
 @using System.Text.Json
 @inherits PaginaAutenticada
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ServicioApiGenerico servicioApi
 @inject IJSRuntime JS

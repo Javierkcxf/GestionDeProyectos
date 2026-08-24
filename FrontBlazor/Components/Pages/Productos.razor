@@ -4,7 +4,9 @@
 @using FrontendBlazorApi.Models
 @using System.Text.Json
 @inject IHttpClientFactory fabricaHttp
-@rendermode InteractiveServer
+@using FrontendBlazorApi.Servicios
+@inject ServicioApiGenerico servicioApi
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Productos</PageTitle>
 
@@ -167,16 +169,21 @@
         private const string urlTipoProducto = "api/tipoProducto";
         private const string urlResponsable = "api/responsable";
 
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            await CargarProductos();
-            await CargarTipoProductos();
+            if (firstRender)
+            {
+                await CargarProductos();
+                await CargarTipoProductos();
+                StateHasChanged();
+            }
+            await base.OnAfterRenderAsync(firstRender);
         }
         private async Task CargarTipoProductos()
         {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlTipoProducto);
             
             listaTipoProductos = respuesta?.Datos?.Select(d => new TipoProducto
@@ -194,7 +201,7 @@
             try
             {
                 cargando = true;
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Producto>>>(urlBaseApi);
                 listaProductos = respuesta?.Datos ?? new List<Producto>();
                 mensaje = $"Se cargaron {listaProductos.Count} Producto(s).";
@@ -238,7 +245,7 @@
                     parametros = new { Id = idBusqueda }
                 };
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuestaHttp = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
 
                 if (respuestaHttp.IsSuccessStatusCode)
@@ -302,7 +309,7 @@
             {
                 ProductoActual.Id = 0;
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, ProductoActual);
 
                 if (respuesta.IsSuccessStatusCode)
@@ -340,7 +347,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
                 string nombreClave = "Id";
                 string valorClave = ProductoActual.Id.ToString();
@@ -396,7 +403,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
                 string tabla = "Producto";
                 string nombreClave = "Id";
@@ -439,7 +446,7 @@
             LimpiarMensajes();
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 
                 // Mostrar mensaje de prueba
                 mensaje = "Probando conectividad...";

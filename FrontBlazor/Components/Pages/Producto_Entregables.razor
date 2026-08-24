@@ -4,7 +4,9 @@
 @using FrontendBlazorApi.Models
 @using System.Text.Json
 @inject IHttpClientFactory fabricaHttp
-@rendermode InteractiveServer
+@using FrontendBlazorApi.Servicios
+@inject ServicioApiGenerico servicioApi
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Producto_Entregables</PageTitle>
 
@@ -135,17 +137,22 @@
         private const string urlProducto = "api/producto";
         private const string urlEntregable = "api/entregable";
 
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            await CargarProducto_Entregables();
-            await CargarEntregables();
-            await CargarProductos();
+            if (firstRender)
+            {
+                await CargarProducto_Entregables();
+                await CargarEntregables();
+                await CargarProductos();
+                StateHasChanged();
+            }
+            await base.OnAfterRenderAsync(firstRender);
         }
         private async Task CargarEntregables()
         {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlEntregable);
             
             listaEntregables = respuesta?.Datos?.Select(d => new Entregable
@@ -166,7 +173,7 @@
         {
         try
         {
-            var cliente = fabricaHttp.CreateClient("Api");
+            var cliente = await servicioApi.CrearClienteApiConTokenAsync();
             var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Dictionary<string, object>>>>(urlProducto);
             
             listaProductos = respuesta?.Datos?.Select(d => new Producto
@@ -190,7 +197,7 @@
             try
             {
                 cargando = true;
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.GetFromJsonAsync<RespuestaApi<List<Producto_Entregable>>>(urlBaseApi);
                 listaProducto_Entregables = respuesta?.Datos ?? new List<Producto_Entregable>();
                 mensaje = $"Se cargaron {listaProducto_Entregables.Count} Producto_Entregable(s).";
@@ -234,7 +241,7 @@
                     parametros = new { Id = idBusqueda }
                 };
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuestaHttp = await cliente.PostAsJsonAsync("api/consultas/ejecutarconsultaparametrizada", consulta);
 
                 if (respuestaHttp.IsSuccessStatusCode)
@@ -294,7 +301,7 @@
             try
             {
 
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var respuesta = await cliente.PostAsJsonAsync(urlBaseApi, Producto_EntregableActual);
 
                 if (respuesta.IsSuccessStatusCode)
@@ -331,7 +338,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 var Producto_EntregableParaActualizar = new
                 {
                     FechaAsociacion = Producto_EntregableActual.FechaAsociacion
@@ -375,7 +382,7 @@
 
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
 
                 string tabla = "Producto_Entregable";
                 string esquema = "dbo";
@@ -416,7 +423,7 @@
             LimpiarMensajes();
             try
             {
-                var cliente = fabricaHttp.CreateClient("Api");
+                var cliente = await servicioApi.CrearClienteApiConTokenAsync();
                 
                 // Mostrar mensaje de prueba
                 mensaje = "Probando conectividad...";

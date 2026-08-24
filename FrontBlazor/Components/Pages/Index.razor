@@ -1,6 +1,6 @@
 @page "/"
 @inject NavigationManager Navigation
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @code {
     private void IrAlLogin()
