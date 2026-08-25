@@ -18,6 +18,43 @@ namespace webapicsharp.Repositorios
         {
             _proveedorConexion = proveedorConexion ?? throw new ArgumentNullException(nameof(proveedorConexion));
         }
+        private async Task<Dictionary<string, string>> ObtenerMapaColumnasAsync(string nombreTabla, string esquema)
+        {
+            var mapa = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            string sql = @"
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = @esquema
+                AND table_name = @tabla";
+            try
+            {
+                string cadena = _proveedorConexion.ObtenerCadenaConexion();
+                await using var conexion = new NpgsqlConnection(cadena);
+                await conexion.OpenAsync();
+                await using var comando = new NpgsqlCommand(sql, conexion);
+                comando.Parameters.AddWithValue("esquema", esquema);
+                comando.Parameters.AddWithValue("tabla", nombreTabla);
+                await using var lector = await comando.ExecuteReaderAsync();
+                while (await lector.ReadAsync())
+                {
+                    string columna = lector.GetString(0);
+                    mapa[columna] = columna;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Advertencia: No se pudo obtener el mapa de columnas de {esquema}.{nombreTabla}: {ex.Message}");
+            }
+            return mapa;
+        }
+        // El frontend serializa los nombres de propiedades en camelCase (ej. "idProyectoPadre"),
+        // pero las columnas reales en Postgres quedaron en PascalCase al migrar desde SQL Server
+        // (ej. "IdProyectoPadre"). Postgres es sensible a mayúsculas en identificadores entre
+        // comillas, así que sin esta resolución el INSERT/UPDATE falla con "column does not exist".
+        private string ResolverNombreColumna(Dictionary<string, string> mapaColumnas, string nombreSolicitado)
+        {
+            return mapaColumnas.TryGetValue(nombreSolicitado, out var real) ? real : nombreSolicitado;
+        }
         private async Task<NpgsqlDbType?> DetectarTipoColumnaAsync(string nombreTabla, string esquema, string nombreColumna)
         {
             string sql = @"
@@ -184,6 +221,8 @@ namespace webapicsharp.Repositorios
             var filas = new List<Dictionary<string, object?>>();
             try
             {
+                var mapaColumnas = await ObtenerMapaColumnasAsync(nombreTabla, esquemaFinal);
+                nombreClave = ResolverNombreColumna(mapaColumnas, nombreClave);
                 var tipoColumna = await DetectarTipoColumnaAsync(nombreTabla, esquemaFinal, nombreClave);
                 bool esBusquedaFechaSoloEnTimestamp =
                     tipoColumna == NpgsqlDbType.Timestamp &&
@@ -267,6 +306,10 @@ namespace webapicsharp.Repositorios
                     }
                 }
             }
+            var mapaColumnas = await ObtenerMapaColumnasAsync(nombreTabla, esquemaFinal);
+            datosFinales = datosFinales.ToDictionary(
+                kvp => ResolverNombreColumna(mapaColumnas, kvp.Key),
+                kvp => kvp.Value);
             var columnas = string.Join(", ", datosFinales.Keys.Select(k => $"\"{k}\""));
             var parametros = string.Join(", ", datosFinales.Keys.Select(k => $"@{k}"));
             string sql = $"INSERT INTO \"{esquemaFinal}\".\"{nombreTabla}\" ({columnas}) VALUES ({parametros})";
@@ -341,6 +384,11 @@ namespace webapicsharp.Repositorios
             }
             try
             {
+                var mapaColumnas = await ObtenerMapaColumnasAsync(nombreTabla, esquemaFinal);
+                nombreClave = ResolverNombreColumna(mapaColumnas, nombreClave);
+                datosFinales = datosFinales.ToDictionary(
+                    kvp => ResolverNombreColumna(mapaColumnas, kvp.Key),
+                    kvp => kvp.Value);
                 var tipoColumna = await DetectarTipoColumnaAsync(nombreTabla, esquemaFinal, nombreClave);
                 object valorClaveConvertido = ConvertirValor(valorClave, tipoColumna);
                 var clausulaSet = string.Join(", ", datosFinales.Keys.Select(k => $"\"{k}\" = @{k}"));
@@ -403,6 +451,8 @@ namespace webapicsharp.Repositorios
             string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim().ToLowerInvariant();
             try
             {
+                var mapaColumnas = await ObtenerMapaColumnasAsync(nombreTabla, esquemaFinal);
+                nombreClave = ResolverNombreColumna(mapaColumnas, nombreClave);
                 var tipoColumna = await DetectarTipoColumnaAsync(nombreTabla, esquemaFinal, nombreClave);
                 object valorConvertido = ConvertirValor(valorClave, tipoColumna);
                 string sql = $"DELETE FROM \"{esquemaFinal}\".\"{nombreTabla}\" WHERE \"{nombreClave}\" = @valorClave";
@@ -449,6 +499,9 @@ namespace webapicsharp.Repositorios
             string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim().ToLowerInvariant();
             try
             {
+                var mapaColumnas = await ObtenerMapaColumnasAsync(nombreTabla, esquemaFinal);
+                campoUsuario = ResolverNombreColumna(mapaColumnas, campoUsuario);
+                campoContrasena = ResolverNombreColumna(mapaColumnas, campoContrasena);
                 var tipoColumna = await DetectarTipoColumnaAsync(nombreTabla, esquemaFinal, campoUsuario);
                 object valorConvertido = ConvertirValor(valorUsuario, tipoColumna);
                 string sql = $"SELECT \"{campoContrasena}\" FROM \"{esquemaFinal}\".\"{nombreTabla}\" WHERE \"{campoUsuario}\" = @valorUsuario";
