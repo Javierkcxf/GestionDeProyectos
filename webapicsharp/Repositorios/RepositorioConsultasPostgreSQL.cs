@@ -120,6 +120,11 @@ private async Task<List<(string Nombre, string Modo, string Tipo)>> ObtenerMetad
                 esquema = partes[0].Trim();
                 nombreSPSinEsquema = partes[1].Trim();
             }
+            nombreSPSinEsquema = nombreSPSinEsquema.Trim().ToLowerInvariant();
+            if (!string.IsNullOrWhiteSpace(esquema))
+            {
+                esquema = esquema.Trim().ToLowerInvariant();
+            }
             string sqlTipo;
             if (!string.IsNullOrWhiteSpace(esquema))
             {
