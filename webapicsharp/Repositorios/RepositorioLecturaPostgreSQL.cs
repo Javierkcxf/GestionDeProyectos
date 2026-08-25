@@ -130,7 +130,11 @@ namespace webapicsharp.Repositorios
         {
             if (string.IsNullOrWhiteSpace(nombreTabla))
                 throw new ArgumentException("El nombre de la tabla no puede estar vacío.", nameof(nombreTabla));
-            string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim();
+            // Postgres distingue mayúsculas en identificadores entre comillas; el frontend
+            // no es consistente con el casing que envía (ej. "tipoProyecto" vs "tipoproyecto"),
+            // así que se normaliza a minúsculas para que siempre resuelva a la misma tabla.
+            nombreTabla = nombreTabla.Trim().ToLowerInvariant();
+            string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim().ToLowerInvariant();
             int limiteFinal = limite ?? 1000;
             string sql = $"SELECT * FROM \"{esquemaFinal}\".\"{nombreTabla}\" LIMIT @limite";
             var filas = new List<Dictionary<string, object?>>();
@@ -175,7 +179,8 @@ namespace webapicsharp.Repositorios
                 throw new ArgumentException("El nombre de la clave no puede estar vacío.", nameof(nombreClave));
             if (string.IsNullOrWhiteSpace(valor))
                 throw new ArgumentException("El valor no puede estar vacío.", nameof(valor));
-            string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim();
+            nombreTabla = nombreTabla.Trim().ToLowerInvariant();
+            string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim().ToLowerInvariant();
             var filas = new List<Dictionary<string, object?>>();
             try
             {
@@ -244,7 +249,8 @@ namespace webapicsharp.Repositorios
                 throw new ArgumentException("El nombre de la tabla no puede estar vacío.", nameof(nombreTabla));
             if (datos == null || !datos.Any())
                 throw new ArgumentException("Los datos no pueden estar vacíos.", nameof(datos));
-            string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim();
+            nombreTabla = nombreTabla.Trim().ToLowerInvariant();
+            string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim().ToLowerInvariant();
             var datosFinales = new Dictionary<string, object?>(datos);
             if (!string.IsNullOrWhiteSpace(camposEncriptar))
             {
@@ -315,7 +321,8 @@ namespace webapicsharp.Repositorios
                 throw new ArgumentException("El valor de la clave no puede estar vacío.", nameof(valorClave));
             if (datos == null || !datos.Any())
                 throw new ArgumentException("Los datos a actualizar no pueden estar vacíos.", nameof(datos));
-            string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim();
+            nombreTabla = nombreTabla.Trim().ToLowerInvariant();
+            string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim().ToLowerInvariant();
             var datosFinales = new Dictionary<string, object?>(datos);
             if (!string.IsNullOrWhiteSpace(camposEncriptar))
             {
@@ -392,7 +399,8 @@ namespace webapicsharp.Repositorios
                 throw new ArgumentException("El nombre de la clave no puede estar vacío.", nameof(nombreClave));
             if (string.IsNullOrWhiteSpace(valorClave))
                 throw new ArgumentException("El valor de la clave no puede estar vacío.", nameof(valorClave));
-            string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim();
+            nombreTabla = nombreTabla.Trim().ToLowerInvariant();
+            string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim().ToLowerInvariant();
             try
             {
                 var tipoColumna = await DetectarTipoColumnaAsync(nombreTabla, esquemaFinal, nombreClave);
@@ -437,7 +445,8 @@ namespace webapicsharp.Repositorios
                 throw new ArgumentException("El campo de contraseña no puede estar vacío.", nameof(campoContrasena));
             if (string.IsNullOrWhiteSpace(valorUsuario))
                 throw new ArgumentException("El valor de usuario no puede estar vacío.", nameof(valorUsuario));
-            string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim();
+            nombreTabla = nombreTabla.Trim().ToLowerInvariant();
+            string esquemaFinal = string.IsNullOrWhiteSpace(esquema) ? "public" : esquema.Trim().ToLowerInvariant();
             try
             {
                 var tipoColumna = await DetectarTipoColumnaAsync(nombreTabla, esquemaFinal, campoUsuario);
