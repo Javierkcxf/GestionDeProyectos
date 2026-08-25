@@ -189,27 +189,28 @@ private async Task<List<(string Nombre, string Modo, string Tipo)>> ObtenerMetad
                 }
                 if (esJSON)
                 {
-                    string valorJson = valor == DBNull.Value ? "{}" : valor?.ToString() ?? "{}";
-                    comando.Parameters.Add(new NpgsqlParameter { Value = valorJson, NpgsqlDbType = tipoMeta == "jsonb" ? NpgsqlDbType.Jsonb : NpgsqlDbType.Json });
+                    var tipoJson = tipoMeta == "jsonb" ? NpgsqlDbType.Jsonb : NpgsqlDbType.Json;
+                    object valorJson = valor == DBNull.Value ? DBNull.Value : (valor?.ToString() ?? "{}");
+                    comando.Parameters.Add(new NpgsqlParameter { Value = valorJson, NpgsqlDbType = tipoJson });
                 }
                 else if (tipoMeta is "integer" or "int" or "int4")
                 {
-                    int valorInt = valor == DBNull.Value ? 0 : Convert.ToInt32(valor);
+                    object valorInt = valor == DBNull.Value ? DBNull.Value : Convert.ToInt32(valor);
                     comando.Parameters.Add(new NpgsqlParameter { Value = valorInt, NpgsqlDbType = NpgsqlDbType.Integer });
                 }
                 else if (tipoMeta is "bigint" or "int8")
                 {
-                    long valorLong = valor == DBNull.Value ? 0 : Convert.ToInt64(valor);
+                    object valorLong = valor == DBNull.Value ? DBNull.Value : Convert.ToInt64(valor);
                     comando.Parameters.Add(new NpgsqlParameter { Value = valorLong, NpgsqlDbType = NpgsqlDbType.Bigint });
                 }
                 else if (tipoMeta is "numeric" or "decimal")
                 {
-                    decimal valorDec = valor == DBNull.Value ? 0 : Convert.ToDecimal(valor);
+                    object valorDec = valor == DBNull.Value ? DBNull.Value : Convert.ToDecimal(valor);
                     comando.Parameters.Add(new NpgsqlParameter { Value = valorDec, NpgsqlDbType = NpgsqlDbType.Numeric });
                 }
                 else if (tipoMeta is "character varying" or "varchar" or "text")
                 {
-                    string valorStr = valor == DBNull.Value ? string.Empty : valor?.ToString() ?? string.Empty;
+                    object valorStr = valor == DBNull.Value ? DBNull.Value : (valor?.ToString() ?? string.Empty);
                     comando.Parameters.Add(new NpgsqlParameter { Value = valorStr, NpgsqlDbType = MapearTipo(tipoMeta) });
                 }
                 else
