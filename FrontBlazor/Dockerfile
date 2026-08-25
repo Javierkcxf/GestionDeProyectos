@@ -1,9 +1,12 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
-COPY FrontendBlazorApi.csproj .
-RUN dotnet restore FrontendBlazorApi.csproj
+# No se separa el restore (copiando solo el .csproj primero) como optimización
+# de caché de capas: los "static web assets" de Blazor (blazor.web.js, etc.)
+# se resuelven durante el restore/build a partir del árbol completo del
+# proyecto (wwwroot incluido), así que con --no-restore tras un restore hecho
+# sin wwwroot presente el publish queda sin esos archivos (404 en runtime).
 COPY . .
-RUN dotnet publish FrontendBlazorApi.csproj -c Release -o /app --no-restore
+RUN dotnet publish FrontendBlazorApi.csproj -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
