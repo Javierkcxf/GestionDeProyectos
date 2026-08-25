@@ -13,6 +13,12 @@
 
 main {
     flex: 1;
+    /* Por defecto un item flex no encoge por debajo del ancho mínimo de su
+       contenido (min-width: auto), así que una tabla o formulario ancho
+       empuja a .page entero más allá del viewport en vez de scrollear
+       adentro de su propio contenedor. min-width: 0 deja que el overflow
+       lo maneje el contenido interno (ej. .table-responsive). */
+    min-width: 0;
 }
 
 .content {
@@ -44,6 +50,7 @@ main {
 
     .sidebar {
         width: 250px;
+        flex-shrink: 0;
         height: 100vh;
         position: sticky;
         top: 0;
